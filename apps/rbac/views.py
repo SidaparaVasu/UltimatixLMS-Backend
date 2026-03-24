@@ -1,4 +1,5 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from common.response import success_response, created_response, error_response
@@ -6,19 +7,22 @@ from .models import (
     PermissionGroupMaster,
     PermissionMaster,
     RoleMaster,
-    RolePermissionMaster
+    RolePermissionMaster,
+    UserRoleMaster
 )
 from .serializers import (
     PermissionGroupSerializer,
     PermissionSerializer,
     RoleMasterSerializer,
-    RolePermissionSerializer
+    RolePermissionSerializer,
+    UserRoleSerializer
 )
 from .services import (
     PermissionGroupService,
     PermissionService,
     RoleService,
-    RolePermissionService
+    RolePermissionService,
+    UserRoleService
 )
 
 
@@ -150,3 +154,44 @@ class RolePermissionViewSet(BaseRBACViewSet):
     serializer_class = RolePermissionSerializer
     service_class = RolePermissionService
     model = RolePermissionMaster
+
+
+class UserRoleViewSet(BaseRBACViewSet):
+    queryset = UserRoleMaster.objects.all()
+    serializer_class = UserRoleSerializer
+    service_class = UserRoleService
+    model = UserRoleMaster
+
+
+class MyPermissionsAPIView(APIView):
+    """
+    Returns the aggregated permissions and scopes for the authenticated user.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Fetch active role assignments for the current user
+        user_roles = UserRoleMaster.objects.filter(
+            user=request.user, 
+            is_active=True
+        ).select_related("role")
+        
+        permissions_data = []
+        for ur in user_roles:
+            # For each role, fetch its associated permissions
+            role_perms = RolePermissionMaster.objects.filter(
+                role=ur.role
+            ).select_related("permission")
+            
+            for rp in role_perms:
+                permissions_data.append({
+                    "permission_code": rp.permission.permission_code,
+                    "permission_name": rp.permission.permission_name,
+                    "scope_type": ur.scope_type,
+                    "scope_id": ur.scope_id
+                })
+        
+        return success_response(
+            message="User permissions retrieved successfully.",
+            data=permissions_data
+        )

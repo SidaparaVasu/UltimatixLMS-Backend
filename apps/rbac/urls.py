@@ -4,7 +4,9 @@ from .views import (
     PermissionGroupViewSet,
     PermissionMasterViewSet,
     RoleMasterViewSet,
-    RolePermissionViewSet
+    RolePermissionViewSet,
+    UserRoleViewSet,
+    MyPermissionsAPIView
 )
 
 router = DefaultRouter()
@@ -12,7 +14,9 @@ router.register("permission-groups", PermissionGroupViewSet, basename="permissio
 router.register("permissions", PermissionMasterViewSet, basename="permissions")
 router.register("roles", RoleMasterViewSet, basename="roles")
 router.register("role-mappings", RolePermissionViewSet, basename="role-mappings")
+router.register("user-assignments", UserRoleViewSet, basename="user-assignments")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("my-permissions/", MyPermissionsAPIView.as_view(), name="my-permissions"),
 ]

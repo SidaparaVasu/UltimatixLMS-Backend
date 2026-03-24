@@ -45,6 +45,8 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "apps.core_system",
     "apps.auth_security",
+    "apps.org_management",
+    "apps.rbac",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

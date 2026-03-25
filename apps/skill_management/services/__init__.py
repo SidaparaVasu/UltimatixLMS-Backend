@@ -2,7 +2,8 @@ from ..models import (
     SkillCategoryMaster,
     SkillMaster,
     SkillCategorySkillMap,
-    SkillLevelMaster
+    SkillLevelMaster,
+    JobRoleSkillRequirement
 )
 from .base_service import BaseSkillService
 
@@ -25,3 +26,7 @@ class SkillCategoryMappingService(BaseSkillService):
 
 class SkillLevelService(BaseSkillService):
     model = SkillLevelMaster
+
+
+class JobRoleSkillService(BaseSkillService):
+    model = JobRoleSkillRequirement

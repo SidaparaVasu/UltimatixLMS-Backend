@@ -3,7 +3,8 @@ from .models import (
     SkillCategoryMaster,
     SkillMaster,
     SkillCategorySkillMap,
-    SkillLevelMaster
+    SkillLevelMaster,
+    JobRoleSkillRequirement
 )
 
 
@@ -35,3 +36,10 @@ class SkillLevelAdmin(admin.ModelAdmin):
     search_fields = ("level_name",)
     list_filter = ("is_active",)
     ordering = ("level_rank",)
+
+
+@admin.register(JobRoleSkillRequirement)
+class JobRoleSkillRequirementAdmin(admin.ModelAdmin):
+    list_display = ("job_role", "skill", "required_level", "is_active", "created_at")
+    search_fields = ("job_role__job_role_name", "skill__skill_name")
+    list_filter = ("is_active", "job_role", "required_level")

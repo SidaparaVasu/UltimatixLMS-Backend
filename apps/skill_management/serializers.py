@@ -3,7 +3,8 @@ from .models import (
     SkillCategoryMaster,
     SkillMaster,
     SkillCategorySkillMap,
-    SkillLevelMaster
+    SkillLevelMaster,
+    JobRoleSkillRequirement
 )
 
 
@@ -45,3 +46,13 @@ class SkillDetailSerializer(SkillMasterSerializer):
     def get_child_skills(self, obj):
         children = obj.child_skills.filter(is_active=True)
         return SkillMasterSerializer(children, many=True).data
+
+
+class JobRoleSkillRequirementSerializer(serializers.ModelSerializer):
+    job_role_name = serializers.CharField(source="job_role.job_role_name", read_only=True)
+    skill_name = serializers.CharField(source="skill.skill_name", read_only=True)
+    required_level_name = serializers.CharField(source="required_level.level_name", read_only=True)
+
+    class Meta:
+        model = JobRoleSkillRequirement
+        fields = "__all__"

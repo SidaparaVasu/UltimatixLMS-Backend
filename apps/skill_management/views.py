@@ -6,20 +6,23 @@ from .models import (
     SkillCategoryMaster,
     SkillMaster,
     SkillCategorySkillMap,
-    SkillLevelMaster
+    SkillLevelMaster,
+    JobRoleSkillRequirement
 )
 from .serializers import (
     SkillCategorySerializer,
     SkillMasterSerializer,
     SkillCategoryMappingSerializer,
     SkillLevelSerializer,
-    SkillDetailSerializer
+    SkillDetailSerializer,
+    JobRoleSkillRequirementSerializer
 )
 from .services import (
     SkillCategoryService,
     SkillService,
     SkillCategoryMappingService,
-    SkillLevelService
+    SkillLevelService,
+    JobRoleSkillService
 )
 
 
@@ -122,3 +125,11 @@ class SkillLevelViewSet(BaseSkillViewSet):
     service_class = SkillLevelService
     model = SkillLevelMaster
     required_permission = "SKILL_LEVEL_MANAGE"
+
+
+class JobRoleSkillRequirementViewSet(BaseSkillViewSet):
+    queryset = JobRoleSkillRequirement.objects.all()
+    serializer_class = JobRoleSkillRequirementSerializer
+    service_class = JobRoleSkillService
+    model = JobRoleSkillRequirement
+    required_permission = "ROLE_COMPETENCY_MANAGE"

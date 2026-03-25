@@ -1,4 +1,5 @@
 from django.db import models
+from apps.org_management.models import JobRoleMaster
 
 
 class SkillCategoryMaster(models.Model):
@@ -145,3 +146,40 @@ class SkillLevelMaster(models.Model):
 
     def __str__(self):
         return f"Level {self.level_rank}: {self.level_name}"
+
+
+class JobRoleSkillRequirement(models.Model):
+    """
+    Defines the required skills and minimum proficiency levels for each job role.
+    This creates the "ideal" competency matrix for the organization.
+    """
+    job_role = models.ForeignKey(
+        JobRoleMaster,
+        on_delete=models.CASCADE,
+        related_name="skill_requirements",
+        help_text="Role being assigned the skill requirement."
+    )
+    skill = models.ForeignKey(
+        SkillMaster,
+        on_delete=models.CASCADE,
+        related_name="role_requirements"
+    )
+    required_level = models.ForeignKey(
+        SkillLevelMaster,
+        on_delete=models.PROTECT,
+        help_text="Minimum proficiency level required for this role."
+    )
+    is_active = models.BooleanField(
+        default=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "job_role_skill_requirement"
+        unique_together = ["job_role", "skill"]
+        verbose_name = "Job Role Skill Requirement"
+        verbose_name_plural = "Job Role Skill Requirements"
+
+    def __str__(self):
+        return f"{self.job_role.job_role_name} -> {self.skill.skill_name} ({self.required_level.level_name})"

@@ -4,7 +4,9 @@ from .models import (
     SkillMaster,
     SkillCategorySkillMap,
     SkillLevelMaster,
-    JobRoleSkillRequirement
+    JobRoleSkillRequirement,
+    EmployeeSkill,
+    EmployeeSkillHistory
 )
 
 
@@ -43,3 +45,18 @@ class JobRoleSkillRequirementAdmin(admin.ModelAdmin):
     list_display = ("job_role", "skill", "required_level", "is_active", "created_at")
     search_fields = ("job_role__job_role_name", "skill__skill_name")
     list_filter = ("is_active", "job_role", "required_level")
+
+
+@admin.register(EmployeeSkill)
+class EmployeeSkillAdmin(admin.ModelAdmin):
+    list_display = ("employee", "skill", "current_level", "is_active", "updated_at")
+    search_fields = ("employee__employee_code", "skill__skill_name")
+    list_filter = ("is_active", "skill", "current_level")
+
+
+@admin.register(EmployeeSkillHistory)
+class EmployeeSkillHistoryAdmin(admin.ModelAdmin):
+    list_display = ("employee", "skill", "old_level", "new_level", "changed_at")
+    search_fields = ("employee__employee_code", "skill__skill_name")
+    list_filter = ("skill", "changed_at")
+    readonly_fields = ("employee", "skill", "old_level", "new_level", "changed_at", "remarks")

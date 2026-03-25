@@ -1,5 +1,5 @@
 from django.db import models
-from apps.org_management.models import JobRoleMaster
+from apps.org_management.models import JobRoleMaster, EmployeeMaster
 
 
 class SkillCategoryMaster(models.Model):
@@ -183,3 +183,79 @@ class JobRoleSkillRequirement(models.Model):
 
     def __str__(self):
         return f"{self.job_role.job_role_name} -> {self.skill.skill_name} ({self.required_level.level_name})"
+
+
+class EmployeeSkill(models.Model):
+    """
+    Stores current actual skill proficiency levels for employees.
+    """
+    employee = models.ForeignKey(
+        EmployeeMaster,
+        on_delete=models.CASCADE,
+        related_name="skills"
+    )
+    skill = models.ForeignKey(
+        SkillMaster,
+        on_delete=models.CASCADE,
+        related_name="employee_owners"
+    )
+    current_level = models.ForeignKey(
+        SkillLevelMaster,
+        on_delete=models.PROTECT
+    )
+    is_active = models.BooleanField(
+        default=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "employee_skill"
+        unique_together = ["employee", "skill"]
+        verbose_name = "Employee Skill"
+        verbose_name_plural = "Employee Skills"
+
+    def __str__(self):
+        return f"{self.employee.employee_code} -> {self.skill.skill_name} ({self.current_level.level_name})"
+
+
+class EmployeeSkillHistory(models.Model):
+    """
+    Stores historical changes in employee skill levels for audit and progression tracking.
+    """
+    employee = models.ForeignKey(
+        EmployeeMaster,
+        on_delete=models.CASCADE,
+        related_name="skill_history"
+    )
+    skill = models.ForeignKey(
+        SkillMaster,
+        on_delete=models.CASCADE
+    )
+    old_level = models.ForeignKey(
+        SkillLevelMaster,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="old_history"
+    )
+    new_level = models.ForeignKey(
+        SkillLevelMaster,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="new_history"
+    )
+    remarks = models.CharField(
+        max_length=255,
+        blank=True,
+        default=""
+    )
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "employee_skill_history"
+        verbose_name = "Employee Skill History"
+        verbose_name_plural = "Employee Skill Histories"
+        ordering = ["-changed_at"]
+
+    def __str__(self):
+        return f"{self.employee.employee_code} - {self.skill.skill_name} changed on {self.changed_at}"

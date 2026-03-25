@@ -7,7 +7,9 @@ from .models import (
     SkillMaster,
     SkillCategorySkillMap,
     SkillLevelMaster,
-    JobRoleSkillRequirement
+    JobRoleSkillRequirement,
+    EmployeeSkill,
+    EmployeeSkillHistory
 )
 from .serializers import (
     SkillCategorySerializer,
@@ -15,14 +17,18 @@ from .serializers import (
     SkillCategoryMappingSerializer,
     SkillLevelSerializer,
     SkillDetailSerializer,
-    JobRoleSkillRequirementSerializer
+    JobRoleSkillRequirementSerializer,
+    EmployeeSkillSerializer,
+    EmployeeSkillHistorySerializer
 )
 from .services import (
     SkillCategoryService,
     SkillService,
     SkillCategoryMappingService,
     SkillLevelService,
-    JobRoleSkillService
+    JobRoleSkillService,
+    EmployeeSkillService,
+    EmployeeSkillHistoryService
 )
 
 
@@ -133,3 +139,23 @@ class JobRoleSkillRequirementViewSet(BaseSkillViewSet):
     service_class = JobRoleSkillService
     model = JobRoleSkillRequirement
     required_permission = "ROLE_COMPETENCY_MANAGE"
+
+
+class EmployeeSkillViewSet(BaseSkillViewSet):
+    queryset = EmployeeSkill.objects.all()
+    serializer_class = EmployeeSkillSerializer
+    service_class = EmployeeSkillService
+    model = EmployeeSkill
+    required_permission = "EMPLOYEE_SKILL_MANAGE"
+
+
+class EmployeeSkillHistoryViewSet(BaseSkillViewSet):
+    """
+    History is read-only for employees/managers, usually generated via signals.
+    """
+    queryset = EmployeeSkillHistory.objects.all()
+    serializer_class = EmployeeSkillHistorySerializer
+    service_class = EmployeeSkillHistoryService
+    model = EmployeeSkillHistory
+    required_permission = "EMPLOYEE_SKILL_HISTORY_VIEW"
+    http_method_names = ["get"]

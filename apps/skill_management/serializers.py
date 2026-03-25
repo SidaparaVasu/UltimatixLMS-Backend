@@ -4,7 +4,9 @@ from .models import (
     SkillMaster,
     SkillCategorySkillMap,
     SkillLevelMaster,
-    JobRoleSkillRequirement
+    JobRoleSkillRequirement,
+    EmployeeSkill,
+    EmployeeSkillHistory
 )
 
 
@@ -55,4 +57,24 @@ class JobRoleSkillRequirementSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JobRoleSkillRequirement
+        fields = "__all__"
+
+
+class EmployeeSkillSerializer(serializers.ModelSerializer):
+    employee_code = serializers.CharField(source="employee.employee_code", read_only=True)
+    skill_name = serializers.CharField(source="skill.skill_name", read_only=True)
+    level_name = serializers.CharField(source="current_level.level_name", read_only=True)
+
+    class Meta:
+        model = EmployeeSkill
+        fields = "__all__"
+
+
+class EmployeeSkillHistorySerializer(serializers.ModelSerializer):
+    old_level_name = serializers.CharField(source="old_level.level_name", read_only=True)
+    new_level_name = serializers.CharField(source="new_level.level_name", read_only=True)
+    skill_name = serializers.CharField(source="skill.skill_name", read_only=True)
+
+    class Meta:
+        model = EmployeeSkillHistory
         fields = "__all__"

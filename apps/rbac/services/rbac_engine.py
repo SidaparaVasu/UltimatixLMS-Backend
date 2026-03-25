@@ -1,4 +1,5 @@
 from collections import defaultdict
+from django.core.cache import cache
 from ..models import UserRoleMaster, RolePermissionMaster
 from ..constants import ScopeType
 
@@ -26,6 +27,12 @@ class RBACEngine:
         """
         if not user or not user.is_authenticated:
             return {}
+
+        cache_key = f"rbac_user_perms_{user.id}"
+        cached_perms = cache.get(cache_key)
+        
+        if cached_perms:
+            return cached_perms
 
         # Fetch all active role assignments for the user
         user_roles = UserRoleMaster.objects.filter(
@@ -82,6 +89,9 @@ class RBACEngine:
                 ScopeType.SELF: scopes[ScopeType.SELF],
             }
             
+        # Cache for 1 hour; dynamically invalidated by signals on changes
+        cache.set(cache_key, format_perms, timeout=3600)
+        
         return format_perms
 
     @classmethod

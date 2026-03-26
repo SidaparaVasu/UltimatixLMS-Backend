@@ -20,3 +20,9 @@ docs/*
 
 # Logs
 logs/*
+
+# Node modules
+node_modules/*
+frontend/node_modules/*
+dist/*
+frontend/dist/*

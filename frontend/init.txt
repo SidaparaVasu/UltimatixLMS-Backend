@@ -1,1 +1,0 @@
-This file is created to add frontend directory to repository. It will delete later.

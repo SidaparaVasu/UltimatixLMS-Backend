@@ -1,0 +1,38 @@
+[
+  {
+    "model": "skill_management.skilllevelmaster",
+    "pk": 1,
+    "fields": {
+      "level_name": "Basic",
+      "level_rank": 1,
+      "description": "Entry-level understanding of the skill.",
+      "is_active": true,
+      "created_at": "2026-03-27T11:00:00Z",
+      "updated_at": "2026-03-27T11:00:00Z"
+    }
+  },
+  {
+    "model": "skill_management.skilllevelmaster",
+    "pk": 2,
+    "fields": {
+      "level_name": "Intermediate",
+      "level_rank": 2,
+      "description": "Proficient in common tasks associated with the skill.",
+      "is_active": true,
+      "created_at": "2026-03-27T11:00:00Z",
+      "updated_at": "2026-03-27T11:00:00Z"
+    }
+  },
+  {
+    "model": "skill_management.skilllevelmaster",
+    "pk": 3,
+    "fields": {
+      "level_name": "Advanced",
+      "level_rank": 3,
+      "description": "Expert level mastery and ability to mentor others.",
+      "is_active": true,
+      "created_at": "2026-03-27T11:00:00Z",
+      "updated_at": "2026-03-27T11:00:00Z"
+    }
+  }
+]

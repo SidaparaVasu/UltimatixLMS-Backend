@@ -134,17 +134,30 @@ export const LoginForm = ({ onSubmit, isLoading, error }: LoginFormProps) => {
           {isLoading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
-
-      {/* OTP Login link */}
-      <p className="text-center text-sm text-slate-500">
-        Prefer a code?{' '}
-        <Link
-          to="/login/otp"
-          className="font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors"
-        >
-          Sign in with OTP
-        </Link>
-      </p>
+      
+      <div className="flex flex-col gap-2">
+        {/* OTP Login link */}
+        <p className="text-center text-sm text-slate-500">
+          Prefer a code?{' '}
+          <Link
+            to="/login/otp"
+            className="font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+          >
+            Sign in with OTP
+          </Link>
+        </p>
+          
+        {/* Register link */}
+        <p className="text-center text-sm text-slate-500">
+          Don't have an account?{' '}
+          <Link
+            to="/register"
+            className="font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+          >
+            Sign up
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };

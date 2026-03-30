@@ -3,6 +3,8 @@ import { StatsGrid } from '@/modules/dashboard/components/StatsGrid';
 import { CourseStrip } from '@/modules/dashboard/components/CourseStrip';
 import { SkillGapPanel } from '@/modules/dashboard/components/SkillGapPanel';
 import { CalendarPanel } from '@/modules/dashboard/components/CalendarPanel';
+import { ComplianceTracker } from '@/modules/dashboard/components/ComplianceTracker';
+import { ActivityFeed, NotificationPanel } from '@/modules/dashboard/components/BottomPanels';
 
 const DashboardPage: React.FC = () => {
   return (
@@ -14,6 +16,13 @@ const DashboardPage: React.FC = () => {
       <div className="two-col anim delay-3">
         <SkillGapPanel />
         <CalendarPanel />
+      </div>
+
+      <ComplianceTracker />
+
+      <div className="bottom-row anim delay-5">
+        <ActivityFeed />
+        <NotificationPanel />
       </div>
     </>
   );

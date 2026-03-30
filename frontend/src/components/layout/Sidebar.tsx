@@ -54,7 +54,11 @@ export const Sidebar = () => {
       {/* Sidebar Logo Section */}
       <div className="sidebar-logo">
         <div className="sidebar-logo-mark">
-          <Award size={18} />
+          <img 
+            src="/assets/images/ultimatix-logo.jpg" 
+            alt="Ultimatix Logo" 
+            className="w-full h-full object-cover rounded-[inherit]"
+          />
         </div>
         <span className="sidebar-logo-text">Ultimatix LMS</span>
       </div>

@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { CourseCard } from './CourseCard';
-import { Code, Users, Shield, Globe } from 'lucide-react';
+import { Code, Users, Shield, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const CourseStrip: React.FC = () => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   const courses = [
     {
       title: "Advanced Data Analytics with Python",
@@ -35,8 +37,32 @@ export const CourseStrip: React.FC = () => {
       thumbClass: "thumb-4",
       accentColor: "var(--color-info)",
       icon: Globe
+    },
+    {
+      title: "React Performance Optimization",
+      category: "Development",
+      progress: 45,
+      thumbClass: "thumb-1",
+      accentColor: "#7C3AED",
+      icon: Code
+    },
+    {
+      title: "Strategic Decision Making",
+      category: "Strategy",
+      progress: 20,
+      thumbClass: "thumb-2",
+      accentColor: "#059669",
+      icon: Users
     }
   ];
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const scrollTo = direction === 'left' ? scrollLeft - clientWidth / 2 : scrollLeft + clientWidth / 2;
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="anim delay-2">
@@ -44,12 +70,23 @@ export const CourseStrip: React.FC = () => {
         <span className="section-title">Continue Learning</span>
         <a href="#" className="section-link">See all courses</a>
       </div>
-      <div className="course-scroll-wrap">
-        <div className="course-strip">
-          {courses.map((course) => (
-            <CourseCard key={course.title} {...course} />
-          ))}
+      
+      <div className="course-scroll-container">
+        <button className="scroll-nav-btn left" onClick={() => scroll('left')}>
+          <ChevronLeft size={18} strokeWidth={2.5} />
+        </button>
+        
+        <div className="course-scroll-wrap" ref={scrollRef}>
+          <div className="course-strip">
+            {courses.map((course, i) => (
+              <CourseCard key={i} {...course} />
+            ))}
+          </div>
         </div>
+
+        <button className="scroll-nav-btn right" onClick={() => scroll('right')}>
+          <ChevronRight size={18} strokeWidth={2.5} />
+        </button>
       </div>
     </div>
   );

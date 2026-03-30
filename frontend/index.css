@@ -163,11 +163,14 @@
   flex-shrink: 0;
 }
 .sidebar-logo-mark {
-  width: 30px; height: 30px;
-  background: var(--color-accent);
+  width: auto; height: 32px;
   border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
   flex-shrink: 0;
+}
+.sidebar-logo-mark img {
+  background-size: cover;
+  background-position: center;
 }
 .sidebar-logo-text {
   font-family: var(--font-display);
@@ -524,13 +527,50 @@
 /* ═══════════════════════════════════════════════
    CONTINUE LEARNING
 ═══════════════════════════════════════════════ */
+.course-scroll-container {
+  position: relative;
+  margin: 0 -4px;
+}
 .course-scroll-wrap {
   overflow-x: auto;
   overflow-y: visible;
-  margin: 0 -4px;
   padding: 4px;
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
 }
-.course-scroll-wrap::-webkit-scrollbar { height: 0; }
+.course-scroll-wrap::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+
+.scroll-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  z-index: 10;
+  transition: all 200ms ease;
+  opacity: 0;
+  visibility: hidden;
+}
+.course-scroll-container:hover .scroll-nav-btn {
+  opacity: 1;
+  visibility: visible;
+}
+.scroll-nav-btn:hover {
+  background: var(--color-canvas);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.scroll-nav-btn.left { left: -16px; }
+.scroll-nav-btn.right { right: -16px; }
 .course-strip {
   display: flex;
   gap: var(--space-5);

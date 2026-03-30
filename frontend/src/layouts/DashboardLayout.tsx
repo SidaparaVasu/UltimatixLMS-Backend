@@ -8,21 +8,19 @@ export const DashboardLayout = () => {
   const { isSidebarOpen } = useUIStore();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className={cn("app-shell", !isSidebarOpen && "sidebar-collapsed")}>
       {/* Sidebar Component */}
       <Sidebar />
 
-      <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
-        {/* Header Component */}
-        <Header />
+      {/* TopNav Component */}
+      <Header />
 
-        <main className="p-4 md:p-6 lg:p-8">
-          <div className="mx-auto max-w-screen-2xl">
-            {/* Main Content Area */}
-            <Outlet />
-          </div>
-        </main>
-      </div>
+      {/* Main Content Area */}
+      <main className="main-content">
+        <div className="content-inner">
+          <Outlet />
+        </div>
+      </main>
     </div>
   );
 };

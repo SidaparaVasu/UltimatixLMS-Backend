@@ -2,13 +2,14 @@ import { useUIStore } from "@/stores/uiStore";
 import { useAuthStore } from "@/stores/authStore";
 import { cn } from "@/utils/cn";
 import { 
-  BarChart3, 
+  ChartNoAxesColumn, 
   BookOpen, 
   Calendar, 
   CheckSquare, 
-  Layout, 
+  LayoutDashboard, 
   Award, 
-  Trophy 
+  Trophy,
+  Star,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { getFullName, getInitials, getPrimaryRoleName } from "@/utils/user.utils";
@@ -22,15 +23,15 @@ export const Sidebar = () => {
     {
       title: "General",
       items: [
-        { label: "Overview", icon: Layout, path: "/dashboard", badge: null },
+        { label: "Overview", icon: LayoutDashboard, path: "/dashboard", badge: null },
         { label: "My Courses", icon: BookOpen, path: "/courses", badge: "3" },
-        { label: "Skill Matrix", icon: BarChart3, path: "/skills", badge: null },
+        { label: "Skill Matrix", icon: Star, path: "/skills", badge: null },
       ]
     },
     {
       title: "Training",
       items: [
-        { label: "Calendar", icon: Calendar, path: "/calendar", badge: null },
+        { label: "Training Calendar", icon: Calendar, path: "/calendar", badge: null },
         { label: "Assessments", icon: CheckSquare, path: "/assessments", badge: "1" },
         { label: "Certifications", icon: Award, path: "/certifications", badge: null },
       ]
@@ -38,7 +39,7 @@ export const Sidebar = () => {
     {
       title: "Analytics",
       items: [
-        { label: "Reports", icon: BarChart3, path: "/reports", badge: null },
+        { label: "Reports", icon: ChartNoAxesColumn, path: "/reports", badge: null },
         { label: "Leaderboard", icon: Trophy, path: "/leaderboard", badge: null },
       ]
     }

@@ -10,6 +10,7 @@ const OtpLoginPage = lazy(() => import('@/pages/OtpLoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const EmailVerificationPage = lazy(() => import('@/pages/EmailVerificationPage'));
+const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
 
 // Minimal fallback for lazy loading
 const PageLoader = () => (
@@ -36,7 +37,7 @@ export const AppRoutes = () => {
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<div>Dashboard Page Placeholder</div>} />
+              <Route path="/dashboard" element={<DashboardPage />} />
             </Route>
           </Route>
 

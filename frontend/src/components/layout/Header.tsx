@@ -1,15 +1,10 @@
 import { useUIStore } from '@/stores/uiStore';
-import { useAuthStore } from '@/stores/authStore';
 import { Bell, Menu, Search } from 'lucide-react';
-import { getFullName, getInitials } from '@/utils/user.utils';
 import { ThemeSwitcher } from '@/components/layout/ThemeSwitcher';
+import { UserMenu } from '@/components/layout/UserMenu';
 
 export const Header = () => {
   const { toggleSidebar } = useUIStore();
-  const { user } = useAuthStore();
-
-  const fullName = getFullName(user);
-  const initials = getInitials(user);
 
   return (
     <header className="topnav">
@@ -38,7 +33,7 @@ export const Header = () => {
           <span className="notif-dot"></span>
         </button>
         <ThemeSwitcher />
-        <div className="topnav-avatar" title={fullName}>{initials}</div>
+        <UserMenu />
       </div>
     </header>
   );

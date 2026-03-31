@@ -450,7 +450,7 @@
 .topnav-avatar {
   width: 34px; height: 34px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, #E8833A, #C97B1A);
+  background: var(--color-accent);
   color: #fff; font-size: var(--text-sm); font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;

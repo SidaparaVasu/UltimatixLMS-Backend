@@ -119,7 +119,7 @@ export const ThemeSwitcher: React.FC = () => {
           </div>
 
           {/* Mode section */}
-          <div>
+          {/* <div>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 6 }}>
               Mode
             </div>
@@ -155,7 +155,7 @@ export const ThemeSwitcher: React.FC = () => {
                 );
               })}
             </div>
-          </div>
+          </div> */}
         </div>
       )}
     </div>

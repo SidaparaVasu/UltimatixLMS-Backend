@@ -11,7 +11,7 @@ export const CourseStrip: React.FC = () => {
       category: "Data Science",
       progress: 67,
       thumbClass: "thumb-1",
-      accentColor: "var(--color-accent)",
+      accentColor: "var(--color-info)",
       icon: Code
     },
     {
@@ -35,7 +35,7 @@ export const CourseStrip: React.FC = () => {
       category: "Cloud",
       progress: 12,
       thumbClass: "thumb-4",
-      accentColor: "var(--color-info)",
+      accentColor: "#7C3AED",
       icon: Globe
     },
     {
@@ -43,7 +43,7 @@ export const CourseStrip: React.FC = () => {
       category: "Development",
       progress: 45,
       thumbClass: "thumb-1",
-      accentColor: "#7C3AED",
+      accentColor: "var(--color-info)",
       icon: Code
     },
     {

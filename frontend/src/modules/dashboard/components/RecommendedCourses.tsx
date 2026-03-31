@@ -51,7 +51,7 @@ export const RecommendedCourses: React.FC = () => {
       duration: "8h 45m",
       category: "Design",
       rating: "4.9",
-      accColor: "var(--color-accent)"
+      accColor: "var(--color-info)"
     },
     {
       title: "Microservices Architecture with Go",
@@ -69,7 +69,7 @@ export const RecommendedCourses: React.FC = () => {
       duration: "3h 15m",
       category: "Soft Skills",
       rating: "4.7",
-      accColor: "var(--color-success)"
+      accColor: "var(--color-info)"
     }
   ];
 

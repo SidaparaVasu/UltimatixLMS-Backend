@@ -12,6 +12,12 @@ const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'));
 const EmailVerificationPage = lazy(() => import('@/pages/EmailVerificationPage'));
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
 
+const ComingSoon = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <span className="text-slate-500 font-medium italic">This feature is currently under development and will be available soon.</span>
+  </div>
+);
+
 // Minimal fallback for lazy loading
 const PageLoader = () => (
   <div className="flex min-h-screen items-center justify-center bg-slate-50">
@@ -38,6 +44,15 @@ export const AppRoutes = () => {
             <Route element={<DashboardLayout />}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<DashboardPage />} />
+              
+              {/* Coming Soon Routes */}
+              <Route path="/courses" element={<ComingSoon />} />
+              <Route path="/skills" element={<ComingSoon />} />
+              <Route path="/calendar" element={<ComingSoon />} />
+              <Route path="/assessments" element={<ComingSoon />} />
+              <Route path="/certifications" element={<ComingSoon />} />
+              <Route path="/reports" element={<ComingSoon />} />
+              <Route path="/leaderboard" element={<ComingSoon />} />
             </Route>
           </Route>
 

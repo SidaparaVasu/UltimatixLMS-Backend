@@ -17,6 +17,8 @@ const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const SecuritySettingsPage = lazy(() => import('@/pages/SecuritySettingsPage'));
 const UnauthorizedPage = lazy(() => import('@/pages/UnauthorizedPage'));
+
+// Placeholder for pages that are not yet implemented
 const ComingSoon = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
     <span className="text-slate-500 font-medium italic">This feature is currently under development and will be available soon.</span>

@@ -1,52 +1,52 @@
-from ..models import (
-    SkillCategoryMaster,
-    SkillMaster,
-    SkillCategorySkillMap,
-    SkillLevelMaster,
-    JobRoleSkillRequirement,
-    EmployeeSkill,
-    EmployeeSkillHistory,
-    EmployeeSkillAssessment,
-    CourseSkillMapping
+from common.services.base import BaseService
+from ..repositories import (
+    SkillCategoryRepository,
+    SkillRepository,
+    SkillCategoryMappingRepository,
+    SkillLevelRepository,
+    JobRoleSkillRepository,
+    EmployeeSkillRepository,
+    EmployeeSkillHistoryRepository,
+    EmployeeSkillAssessmentRepository,
+    CourseSkillMappingRepository
 )
-from .base_service import BaseSkillService
 
 
-class SkillCategoryService(BaseSkillService):
-    model = SkillCategoryMaster
+class SkillCategoryService(BaseService):
+    repository_class = SkillCategoryRepository
 
 
-class SkillService(BaseSkillService):
-    model = SkillMaster
-    
+class SkillService(BaseService):
+    repository_class = SkillRepository
+
     def get_skill_tree(self):
-        # Additional custom method to fetch recursive tree if needed
-        return self.model.objects.filter(parent_skill=None, is_active=True)
+        """Fetch root level skills."""
+        return self.repository.filter(parent_skill=None, is_active=True)
 
 
-class SkillCategoryMappingService(BaseSkillService):
-    model = SkillCategorySkillMap
+class SkillCategoryMappingService(BaseService):
+    repository_class = SkillCategoryMappingRepository
 
 
-class SkillLevelService(BaseSkillService):
-    model = SkillLevelMaster
+class SkillLevelService(BaseService):
+    repository_class = SkillLevelRepository
 
 
-class JobRoleSkillService(BaseSkillService):
-    model = JobRoleSkillRequirement
+class JobRoleSkillService(BaseService):
+    repository_class = JobRoleSkillRepository
 
 
-class EmployeeSkillService(BaseSkillService):
-    model = EmployeeSkill
+class EmployeeSkillService(BaseService):
+    repository_class = EmployeeSkillRepository
 
 
-class EmployeeSkillHistoryService(BaseSkillService):
-    model = EmployeeSkillHistory
+class EmployeeSkillHistoryService(BaseService):
+    repository_class = EmployeeSkillHistoryRepository
 
 
-class EmployeeSkillAssessmentService(BaseSkillService):
-    model = EmployeeSkillAssessment
+class EmployeeSkillAssessmentService(BaseService):
+    repository_class = EmployeeSkillAssessmentRepository
 
 
-class CourseSkillMappingService(BaseSkillService):
-    model = CourseSkillMapping
+class CourseSkillMappingService(BaseService):
+    repository_class = CourseSkillMappingRepository

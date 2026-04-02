@@ -151,3 +151,18 @@ class RegistrationException(AppBaseException):
 class SessionRevokedException(AppBaseException):
     default_message = "Session has been revoked."
     default_status = status.HTTP_401_UNAUTHORIZED
+
+
+class PermissionDeniedException(AppBaseException):
+    default_message = "You do not have permission to perform this action."
+    default_status = status.HTTP_403_FORBIDDEN
+
+
+class AuthenticationException(AppBaseException):
+    default_message = "Authentication is required."
+    default_status = status.HTTP_401_UNAUTHORIZED
+
+
+class ValidationException(AppBaseException):
+    default_message = "Validation failed."
+    default_status = status.HTTP_400_BAD_REQUEST

@@ -29,7 +29,7 @@ from .services import (
 class BaseRBACViewSet(viewsets.ModelViewSet):
     """
     Base viewset for RBAC modules.
-    Standardizes responses and deletion logic.
+    Standardizes responses and delegates to services.
     """
     service_class = None
 
@@ -85,7 +85,7 @@ class BaseRBACViewSet(viewsets.ModelViewSet):
         pk = kwargs.get("pk")
         soft_delete = request.query_params.get("soft_delete", "true").lower() == "true"
         self.service_class().delete(pk=pk, soft_delete=soft_delete)
-        msg = f"{self.model.__name__} {'soft-deleted' if soft_delete else 'hard-deleted'} successfully."
+        msg = f"{self.model.__name__} deleted successfully."
         return success_response(message=msg)
 
 
@@ -109,43 +109,26 @@ class RoleMasterViewSet(BaseRBACViewSet):
     service_class = RoleService
     model = RoleMaster
 
-    def destroy(self, request, *args, **kwargs):
-        role = self.get_object()
-        if role.is_system_role:
-            return error_response(
-                message="Cannot delete a system-defined role.",
-                status_code=status.HTTP_403_FORBIDDEN
-            )
-        return super().destroy(request, *args, **kwargs)
-
     @extend_schema(responses={200: RolePermissionSerializer(many=True)})
     @action(detail=True, methods=["post"], url_path="assign-permissions")
     def assign_permissions(self, request, pk=None):
-        """
-        Accepts a list of mission_ids and maps them to the role.
-        Replaces current mappings with the provided list.
-        """
-        role = self.get_object()
+        """Delegates bulk assignment logic to the RoleService."""
         permission_ids = request.data.get("permission_ids", [])
+        success, message = self.service_class().assign_permissions(role_id=pk, permission_ids=permission_ids)
         
-        # Verify permissions exist
-        permissions = PermissionMaster.objects.filter(id__in=permission_ids)
-        if len(permissions) != len(permission_ids):
-             return error_response(message="One or more permission IDs are invalid.", status_code=status.HTTP_400_BAD_REQUEST)
-
-        # Bulk update strategy: Clear and re-create for simplicity
-        RolePermissionMaster.objects.filter(role=role).delete()
-        mappings = [RolePermissionMaster(role=role, permission=p) for p in permissions]
-        RolePermissionMaster.objects.bulk_create(mappings)
-
-        return success_response(message="Permissions assigned successfully.")
+        if not success:
+            return error_response(message=message, status_code=status.HTTP_400_BAD_REQUEST)
+        
+        return success_response(message=message)
 
     @action(detail=True, methods=["get"], url_path="permissions")
     def get_role_permissions(self, request, pk=None):
-        """Returns all permissions currently assigned to this role."""
-        role = self.get_object()
-        mappings = RolePermissionMaster.objects.filter(role=role).select_related("permission")
-        serializer = PermissionSerializer([m.permission for m in mappings], many=True)
+        """Fetches mapped permissions via the RoleService."""
+        permissions = self.service_class().get_role_permissions(role_id=pk)
+        if permissions is None:
+             return error_response(message="Role not found.", status_code=status.HTTP_404_NOT_FOUND)
+        
+        serializer = PermissionSerializer([m.permission for m in permissions], many=True)
         return success_response(data=serializer.data)
 
 
@@ -165,32 +148,12 @@ class UserRoleViewSet(BaseRBACViewSet):
 
 class MyPermissionsAPIView(APIView):
     """
-    Returns the aggregated permissions and scopes for the authenticated user.
+    Returns the aggregated permissions and scopes via the UserRoleService.
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        # Fetch active role assignments for the current user
-        user_roles = UserRoleMaster.objects.filter(
-            user=request.user, 
-            is_active=True
-        ).select_related("role")
-        
-        permissions_data = []
-        for ur in user_roles:
-            # For each role, fetch its associated permissions
-            role_perms = RolePermissionMaster.objects.filter(
-                role=ur.role
-            ).select_related("permission")
-            
-            for rp in role_perms:
-                permissions_data.append({
-                    "permission_code": rp.permission.permission_code,
-                    "permission_name": rp.permission.permission_name,
-                    "scope_type": ur.scope_type,
-                    "scope_id": ur.scope_id
-                })
-        
+        permissions_data = UserRoleService().get_user_permissions(request.user)
         return success_response(
             message="User permissions retrieved successfully.",
             data=permissions_data

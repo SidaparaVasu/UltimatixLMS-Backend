@@ -91,6 +91,8 @@ class SkillGapSnapshot(models.Model):
     current_level = models.ForeignKey(
         SkillLevelMaster,
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name="gap_current_snapshots",
         help_text="The employee's proficiency level at the time of detection."
     )

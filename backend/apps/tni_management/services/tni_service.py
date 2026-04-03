@@ -81,7 +81,7 @@ class TNIEngineService:
         # 1. Fetch employee skills & role requirements
         # Note: This requires access to EmployeeMaster to get job_role_id
         from apps.org_management.models import EmployeeMaster
-        employee = EmployeeMaster.objects.filter(id=employee_id, is_active=True).first()
+        employee = EmployeeMaster.objects.filter(id=employee_id).first()
         if not employee or not employee.job_role_id:
             return []
 

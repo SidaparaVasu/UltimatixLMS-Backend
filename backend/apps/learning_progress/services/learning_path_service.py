@@ -1,6 +1,8 @@
 from common.services.base import BaseService
 from django.utils import timezone
 from django.db import transaction
+from django.db.models import Count
+from ..models import UserLessonProgress
 from ..repositories import (
     LearningPathRepository,
     UserCourseEnrollmentRepository,
@@ -24,7 +26,7 @@ class UserCourseEnrollmentService(BaseService):
         """
         with transaction.atomic():
             # 1. Create Enrollment
-            enrollment = self.repository.create({
+            enrollment = self.repository.create(**{
                 "employee_id": employee_id,
                 "course_id": course_id,
                 "enrollment_type": enrollment_type,
@@ -42,7 +44,7 @@ class UserCourseEnrollmentService(BaseService):
         if not enrollment:
             return
 
-        total_lessons = enrollment.course.sections.aggregate(
+        total_lessons = enrollment.course.sections.all().aggregate(
             lesson_count=Count('lessons')
         )['lesson_count'] or 0
 

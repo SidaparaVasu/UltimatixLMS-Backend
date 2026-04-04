@@ -43,8 +43,10 @@ class UserProgressViewSet(viewsets.ModelViewSet):
         # Note: RBAC filters should ideally be in a mixin or base class
         # Accessing self.request.user.employee.id for strict student isolation
         # TODO: move into a global StudentIsolationMixin
-        if hasattr(self.request.user, 'employee'):
-             return self.queryset.filter(employee=self.request.user.employee)
+        if hasattr(self.request.user, 'employee_record'):
+             employee = self.request.user.employee_record.first()
+             if employee:
+                  return self.queryset.filter(employee=employee)
         return self.queryset
 
     def retrieve(self, request, *args, **kwargs):
@@ -66,9 +68,13 @@ class UserProgressViewSet(viewsets.ModelViewSet):
         if not course_id:
              return error_response(message="Course ID is required", status_code=400)
         
+        employee = request.user.employee_record.first()
+        if not employee:
+             return error_response(message="Employee profile not found")
+
         # Check for existing enrollment
         existing = UserCourseEnrollment.objects.filter(
-             employee=request.user.employee, 
+             employee=employee, 
              course_id=course_id
         ).first()
         
@@ -76,7 +82,7 @@ class UserProgressViewSet(viewsets.ModelViewSet):
              return error_response(message="Already enrolled in this course")
 
         enrollment = self.service_class.enroll_employee_in_course(
-             employee_id=request.user.employee.id,
+             employee_id=employee.id,
              course_id=course_id
         )
         serializer = self.get_serializer(enrollment)
@@ -96,8 +102,23 @@ class HeartbeatViewSet(viewsets.ViewSet):
         """
         serializer = HeartbeatSyncSerializer(data=request.data)
         if serializer.is_valid():
+             # Security Check: Ensure the enrollment belongs to the request user
+             enrollment_id = serializer.data["enrollment_id"]
+             # If student, check if they own this enrollment
+             if hasattr(request.user, 'employee_record'):
+                  employee = request.user.employee_record.first()
+                  is_owner = UserCourseEnrollment.objects.filter(
+                       id=enrollment_id, 
+                       employee=employee
+                  ).exists()
+                  if not is_owner:
+                       return error_response(
+                            message="You do not have permission to update this enrollment", 
+                            status_code=403
+                       )
+
              heartbeat = self.service_class.record_heartbeat(
-                  enrollment_id=serializer.data["enrollment_id"],
+                  enrollment_id=enrollment_id,
                   lesson_id=serializer.data["lesson_id"],
                   content_id=serializer.data["content_id"],
                   playhead=serializer.data["playhead_seconds"]

@@ -7,8 +7,7 @@ from .models import (
     JobRoleSkillRequirement,
     EmployeeSkill,
     EmployeeSkillHistory,
-    EmployeeSkillAssessment,
-    CourseSkillMapping
+    EmployeeSkillAssessment
 )
 
 
@@ -92,10 +91,3 @@ class EmployeeSkillAssessmentSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class CourseSkillMappingSerializer(serializers.ModelSerializer):
-    skill_name = serializers.CharField(source="skill.skill_name", read_only=True)
-    target_level_name = serializers.CharField(source="target_level.level_name", read_only=True)
-
-    class Meta:
-        model = CourseSkillMapping
-        fields = "__all__"

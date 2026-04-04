@@ -1,6 +1,7 @@
 from django.db import models
 from apps.org_management.models import EmployeeMaster, JobRoleMaster, DepartmentMaster
 from apps.skill_management.models import SkillMaster, SkillLevelMaster
+from apps.course_management.models import CourseMaster
 from .constants import TNISourceType, TNIPriority, TNIStatus, TNIApprovalStatus
 
 
@@ -125,9 +126,12 @@ class ComplianceTrainingRequirement(models.Model):
         related_name="compliance_requirements",
         help_text="Role the mandatory training applies to."
     )
-    # CourseMaster is in Module 8. Using BigIntegerField placeholder for now.
-    course_id = models.BigIntegerField(
-        help_text="Foreign Key to future CourseMaster(id)."
+    course = models.ForeignKey(
+        CourseMaster,
+        on_delete=models.PROTECT,
+        related_name="compliance_requirements",
+        null=True,
+        blank=True
     )
     mandatory = models.BooleanField(
         default=True,
@@ -145,11 +149,11 @@ class ComplianceTrainingRequirement(models.Model):
         verbose_name_plural = "Compliance Training Requirements"
         indexes = [
             models.Index(fields=["job_role"], name="idx_compliance_role_id"),
-            models.Index(fields=["course_id"], name="idx_compliance_course_id"),
+            models.Index(fields=["course"], name="idx_compliance_course_fk"),
         ]
 
     def __str__(self):
-        return f"{self.job_role.job_role_name} - Course ID {self.course_id}"
+        return f"{self.job_role.job_role_name} - {self.course.course_title}"
 
 
 class TrainingNeedApproval(models.Model):
@@ -206,9 +210,12 @@ class TrainingNeedCourseRecommendation(models.Model):
         on_delete=models.CASCADE,
         related_name="course_recommendations"
     )
-    # CourseMaster is in Other Module. Using BigIntegerField placeholder for now.
-    course_id = models.BigIntegerField(
-        help_text="Reference to future CourseMaster(id)."
+    course = models.ForeignKey(
+        CourseMaster,
+        on_delete=models.PROTECT,
+        related_name="tni_recommendations",
+        null=True,
+        blank=True
     )
     recommendation_reason = models.CharField(
         max_length=255,
@@ -224,11 +231,11 @@ class TrainingNeedCourseRecommendation(models.Model):
         verbose_name_plural = "TNI Course Recommendations"
         indexes = [
             models.Index(fields=["training_need"], name="idx_tni_course_need_id"),
-            models.Index(fields=["course_id"], name="idx_tni_course_course_id"),
+            models.Index(fields=["course"], name="idx_tni_course_course_fk"),
         ]
 
     def __str__(self):
-        return f"Recommendation: {self.training_need} -> Course {self.course_id}"
+        return f"Recommendation: {self.training_need} -> {self.course.course_title}"
 
 
 class TNIAggregatedAnalysis(models.Model):

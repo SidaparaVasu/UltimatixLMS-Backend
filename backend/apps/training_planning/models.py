@@ -5,6 +5,7 @@ from .constants import (
     TrainingPlanStatus, TrainingPlanPriority, TrainingApprovalStatus,
     TrainingSessionType, EnrollmentStatus, AttendanceStatus
 )
+from apps.course_management.models import CourseMaster
 from common.methods import current_year
 
 class TrainingPlan(models.Model):
@@ -64,9 +65,12 @@ class TrainingPlanItem(models.Model):
         on_delete=models.CASCADE,
         related_name="items"
     )
-    # CourseMaster is in Module 8. Using BigIntegerField placeholder for now.
-    course_id = models.BigIntegerField(
-        help_text="Reference to future CourseMaster(id)."
+    course = models.ForeignKey(
+        CourseMaster,
+        on_delete=models.PROTECT,
+        related_name="plan_items",
+        null=True,
+        blank=True
     )
     target_department = models.ForeignKey(
         DepartmentMaster,
@@ -87,11 +91,11 @@ class TrainingPlanItem(models.Model):
         verbose_name_plural = "Training Plan Items"
         indexes = [
             models.Index(fields=["training_plan"], name="idx_tp_item_plan_id"),
-            models.Index(fields=["course_id"], name="idx_tp_item_course_id"),
+            models.Index(fields=["course"], name="idx_tp_item_course_fk"),
         ]
 
     def __str__(self):
-        return f"{self.training_plan.plan_name} - Course ID {self.course_id}"
+        return f"{self.training_plan.plan_name} - {self.course.course_title}"
 
 
 class TrainingPlanApproval(models.Model):
@@ -171,8 +175,12 @@ class TrainingSession(models.Model):
     """
     Represents actual scheduled training events (batches) for a course.
     """
-    course_id = models.BigIntegerField(
-        help_text="Reference to future CourseMaster(id)."
+    course = models.ForeignKey(
+        CourseMaster,
+        on_delete=models.PROTECT,
+        related_name="sessions",
+        null=True,
+        blank=True
     )
     calendar = models.ForeignKey(
         TrainingCalendar,
@@ -212,7 +220,7 @@ class TrainingSession(models.Model):
         verbose_name_plural = "Training Sessions"
         ordering = ["session_start_date"]
         indexes = [
-            models.Index(fields=["course_id"], name="idx_tp_session_course_id"),
+            models.Index(fields=["course"], name="idx_tp_session_course_fk"),
             models.Index(fields=["calendar"], name="idx_tp_session_cal_id"),
             models.Index(fields=["session_start_date"], name="idx_tp_session_start"),
         ]

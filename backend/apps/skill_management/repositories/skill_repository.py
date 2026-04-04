@@ -7,8 +7,7 @@ from ..models import (
     JobRoleSkillRequirement,
     EmployeeSkill,
     EmployeeSkillHistory,
-    EmployeeSkillAssessment,
-    CourseSkillMapping
+    EmployeeSkillAssessment
 )
 
 
@@ -48,5 +47,3 @@ class EmployeeSkillAssessmentRepository(BaseRepository[EmployeeSkillAssessment])
     model = EmployeeSkillAssessment
 
 
-class CourseSkillMappingRepository(BaseRepository[CourseSkillMapping]):
-    model = CourseSkillMapping

@@ -7,8 +7,7 @@ from ..repositories import (
     JobRoleSkillRepository,
     EmployeeSkillRepository,
     EmployeeSkillHistoryRepository,
-    EmployeeSkillAssessmentRepository,
-    CourseSkillMappingRepository
+    EmployeeSkillAssessmentRepository
 )
 
 
@@ -48,5 +47,3 @@ class EmployeeSkillAssessmentService(BaseService):
     repository_class = EmployeeSkillAssessmentRepository
 
 
-class CourseSkillMappingService(BaseService):
-    repository_class = CourseSkillMappingRepository

@@ -6,6 +6,5 @@ from .skill_service import (
     JobRoleSkillService,
     EmployeeSkillService,
     EmployeeSkillHistoryService,
-    EmployeeSkillAssessmentService,
-    CourseSkillMappingService
+    EmployeeSkillAssessmentService
 )

@@ -301,32 +301,3 @@ class EmployeeSkillAssessment(models.Model):
         return f"{self.employee.employee_code} - {self.skill.skill_name} Score: {self.score}"
 
 
-class CourseSkillMapping(models.Model):
-    """
-    Maps courses to skills for targeted learning recommendations.
-    Acts as a foundation hook for the future Course Management module.
-    """
-    # Using BigIntegerField temporarily until CourseMaster is created
-    course_id = models.BigIntegerField(
-        help_text="Reference to future CourseMaster ID."
-    )
-    skill = models.ForeignKey(
-        SkillMaster,
-        on_delete=models.CASCADE,
-        related_name="course_mappings"
-    )
-    target_level = models.ForeignKey(
-        SkillLevelMaster,
-        on_delete=models.PROTECT,
-        help_text="The proficiency level expected after completing this course."
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = "course_skill_mapping"
-        unique_together = ["course_id", "skill"]
-        verbose_name = "Course Skill Mapping"
-        verbose_name_plural = "Course Skill Mappings"
-
-    def __str__(self):
-        return f"Course ID {self.course_id} targets {self.skill.skill_name} ({self.target_level.level_name})"

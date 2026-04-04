@@ -71,7 +71,11 @@ class CourseMasterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CourseMaster
-        fields = "__all__"
+        fields = (
+            "id", "course_title", "course_code", "category", "category_name",
+            "description", "difficulty_level", "estimated_duration_hours", 
+            "created_by", "author_name", "is_active", "created_at"
+        )
 
 
 class CourseDetailSerializer(CourseMasterSerializer):

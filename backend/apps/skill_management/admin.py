@@ -7,8 +7,7 @@ from .models import (
     JobRoleSkillRequirement,
     EmployeeSkill,
     EmployeeSkillHistory,
-    EmployeeSkillAssessment,
-    CourseSkillMapping
+    EmployeeSkillAssessment
 )
 
 
@@ -71,8 +70,3 @@ class EmployeeSkillAssessmentAdmin(admin.ModelAdmin):
     list_filter = ("result_level", "assessed_at")
 
 
-@admin.register(CourseSkillMapping)
-class CourseSkillMappingAdmin(admin.ModelAdmin):
-    list_display = ("course_id", "skill", "target_level", "created_at")
-    search_fields = ("skill__skill_name",)
-    list_filter = ("target_level", "created_at")

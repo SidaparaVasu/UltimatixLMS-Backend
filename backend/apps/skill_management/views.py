@@ -11,7 +11,7 @@ from .models import (
     EmployeeSkill,
     EmployeeSkillHistory,
     EmployeeSkillAssessment,
-    CourseSkillMapping
+    EmployeeSkillAssessment
 )
 from .serializers import (
     SkillCategorySerializer,
@@ -22,8 +22,7 @@ from .serializers import (
     JobRoleSkillRequirementSerializer,
     EmployeeSkillSerializer,
     EmployeeSkillHistorySerializer,
-    EmployeeSkillAssessmentSerializer,
-    CourseSkillMappingSerializer
+    EmployeeSkillAssessmentSerializer
 )
 from .services import (
     SkillCategoryService,
@@ -33,8 +32,7 @@ from .services import (
     JobRoleSkillService,
     EmployeeSkillService,
     EmployeeSkillHistoryService,
-    EmployeeSkillAssessmentService,
-    CourseSkillMappingService
+    EmployeeSkillAssessmentService
 )
 
 
@@ -175,9 +173,3 @@ class EmployeeSkillAssessmentViewSet(BaseSkillViewSet):
     required_permission = "SKILL_ASSESSMENT_MANAGE"
 
 
-class CourseSkillMappingViewSet(BaseSkillViewSet):
-    queryset = CourseSkillMapping.objects.all()
-    serializer_class = CourseSkillMappingSerializer
-    service_class = CourseSkillMappingService
-    model = CourseSkillMapping
-    required_permission = "COURSE_SKILL_MANAGE"

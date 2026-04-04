@@ -26,6 +26,7 @@ urlpatterns = [
     path("api/v1/tni/", include("apps.tni_management.urls")),
     path("api/v1/planning/", include("apps.training_planning.urls")),
     path("api/v1/courses/", include("apps.course_management.urls")),
+    path("api/v1/learning/", include("apps.learning_progress.urls")),
 
     # OpenAPI schema + interactive docs
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),

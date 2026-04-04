@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import (
     LearningPathMaster,
     UserCourseEnrollment,
+    UserLessonProgress,
     CourseCertificate
 )
 from .serializers import (
@@ -20,7 +21,7 @@ from .services import (
     UserContentProgressService,
     CourseCertificateService
 )
-from common.responses import success_response, error_response
+from common.response import success_response, error_response
 
 
 class UserProgressViewSet(viewsets.ModelViewSet):

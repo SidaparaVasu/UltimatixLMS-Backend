@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { useBusinessUnits } from '@/queries/admin/useAdminMasters';
-import { BusinessUnit } from '@/api/admin-mock-api';
+import { useJobRoles } from '@/queries/admin/useAdminMasters';
+import { JobRole } from '@/api/admin-mock-api';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminActionBar } from '@/components/admin/AdminActionBar';
 import { AdminTableSkeleton } from '@/components/admin/AdminTableSkeleton';
@@ -19,58 +19,60 @@ import {
   TableIdCell
 } from '@/components/ui/table';
 
-const BusinessUnitPage: React.FC = () => {
-  const { data: businessUnits, isLoading, error, refetch } = useBusinessUnits();
+const JobRolePage: React.FC = () => {
+  const { data: jobRoles, isLoading, error } = useJobRoles();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingBU, setEditingBU] = useState<BusinessUnit | null>(null);
+  const [editingRole, setEditingRole] = useState<JobRole | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
     name: '',
     code: '',
-    description: '',
     isActive: true
   });
 
-  const handleOpenDialog = (bu?: BusinessUnit) => {
-    if (bu) {
-      setEditingBU(bu);
-      setFormData({ name: bu.name, code: bu.code, description: bu.description, isActive: bu.isActive });
+  const handleOpenDialog = (role?: JobRole) => {
+    if (role) {
+      setEditingRole(role);
+      setFormData({ 
+        name: role.name, 
+        code: role.code, 
+        isActive: role.isActive 
+      });
     } else {
-      setEditingBU(null);
-      setFormData({ name: '', code: '', description: '', isActive: true });
+      setEditingRole(null);
+      setFormData({ name: '', code: '', isActive: true });
     }
     setIsDialogOpen(true);
   };
 
   const handleSave = () => {
-    // Mock save logic - in a real app, use useMutation here
     console.log('Saved:', formData);
     setIsDialogOpen(false);
   };
 
   // Filter Data
-  const filteredData = businessUnits?.filter(bu => {
+  const filteredData = jobRoles?.filter(role => {
     const matchesSearch = 
-      bu.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      bu.code.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? bu.isActive : !bu.isActive);
+      role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      role.code.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? role.isActive : !role.isActive);
     return matchesSearch && matchesStatus;
   });
 
   return (
     <div className="content-inner">
-      {/* ── Page Header ── */}
       <AdminPageHeader 
-        title="Business Units"
-        description="Manage the top-level organizational divisions within the company."
+        title="Job Roles"
+        description="Define and manage company designations and job titles."
         breadcrumbs={[
           { label: 'Admin', href: '/admin' },
           { label: 'Organization' },
-          { label: 'Business Units' }
+          { label: 'Job Roles' }
         ]}
         action={
           <button 
@@ -90,14 +92,13 @@ const BusinessUnitPage: React.FC = () => {
             }}
           >
             <Plus size={16} />
-            Add Business Unit
+            Add Job Role
           </button>
         }
       />
 
-      {/* ── Action Bar ── */}
       <AdminActionBar 
-        searchPlaceholder="Search by Business Unit Name or Code..."
+        searchPlaceholder="Search by Role Name or Code..."
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         resultCount={filteredData?.length}
@@ -116,16 +117,15 @@ const BusinessUnitPage: React.FC = () => {
 
       {/* ── Data Table ── */}
       {isLoading ? (
-        <AdminTableSkeleton rowCount={4} columnCount={5} showActionCol />
+        <AdminTableSkeleton rowCount={4} columnCount={4} showActionCol />
       ) : error ? (
-        <div className="flex justify-center p-8 text-red-500">Failed to load Business Units.</div>
+        <div className="flex justify-center p-8 text-red-500">Failed to load Job Roles.</div>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Unit Code</TableHead>
-              <TableHead>Business Unit</TableHead>
-              <TableHead>Description</TableHead>
+              <TableHead>Role Code</TableHead>
+              <TableHead>Job Title</TableHead>
               <TableHead>Status</TableHead>
               <TableHead style={{ textAlign: 'center' }}>Actions</TableHead>
             </TableRow>
@@ -133,26 +133,25 @@ const BusinessUnitPage: React.FC = () => {
           <TableBody>
             {filteredData?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
-                  <span style={{ color: 'var(--color-text-muted)' }}>No business units found.</span>
+                <TableCell colSpan={4} style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
+                  <span style={{ color: 'var(--color-text-muted)' }}>No job roles found.</span>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredData?.map((bu) => (
-                <TableRow key={bu.id}>
-                  <TableIdCell>{bu.code}</TableIdCell>
-                  <TableCell style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{bu.name}</TableCell>
-                  <TableCell>{bu.description}</TableCell>
+              filteredData?.map((role) => (
+                <TableRow key={role.id}>
+                  <TableIdCell>{role.code}</TableIdCell>
+                  <TableCell style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{role.name}</TableCell>
                   <TableCell>
-                    <TableStatusBadge variant={bu.isActive ? 'active' : 'inactive'}>
-                      {bu.isActive ? 'Active' : 'Inactive'}
+                    <TableStatusBadge variant={role.isActive ? 'active' : 'inactive'}>
+                      {role.isActive ? 'Active' : 'Inactive'}
                     </TableStatusBadge>
                   </TableCell>
                   <TableActionCell>
                     <TableIconButton 
                       variant="edit" 
-                      title="Edit Business Unit" 
-                      onClick={() => handleOpenDialog(bu)}
+                      title="Edit Job Role" 
+                      onClick={() => handleOpenDialog(role)}
                     />
                   </TableActionCell>
                 </TableRow>
@@ -166,8 +165,8 @@ const BusinessUnitPage: React.FC = () => {
       <Dialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        title={editingBU ? "Edit Business Unit" : "Add Business Unit"}
-        description="Enter the details for the business unit below."
+        title={editingRole ? "Edit Job Role" : "Add Job Role"}
+        description="Configure titles and designations available in the organization."
         footer={
           <>
             <button 
@@ -200,49 +199,37 @@ const BusinessUnitPage: React.FC = () => {
                 color: '#fff'
               }}
             >
-              {editingBU ? "Update Business Unit" : "Create Business Unit"}
+              {editingRole ? "Update Job Role" : "Create Job Role"}
             </button>
           </>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="form-group">
-            <label className="form-label">Business Unit Code *</label>
+            <label className="form-label">Role Code *</label>
             <input 
               type="text" 
               className="form-input" 
-              placeholder="e.g. BU-ENG" 
+              placeholder="e.g. ROLE-SE" 
               value={formData.code}
               onChange={e => setFormData({ ...formData, code: e.target.value })}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Business Unit Name *</label>
+            <label className="form-label">Job Title *</label>
             <input 
               type="text" 
               className="form-input" 
-              placeholder="e.g. Engineering"
+              placeholder="e.g. Software Engineer"
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Description</label>
-            <textarea 
-              className="form-input" 
-              style={{ height: '80px', paddingTop: '8px', resize: 'none' }}
-              placeholder="Brief description of functions..."
-              value={formData.description}
-              onChange={e => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
 
           <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
             <div>
               <label className="form-label" style={{ display: 'block', color: 'var(--color-text-primary)' }}>Active Status</label>
-              <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Inactive Business Units will be hidden from normal operations.</span>
             </div>
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
               <input 
@@ -255,9 +242,8 @@ const BusinessUnitPage: React.FC = () => {
           </div>
         </div>
       </Dialog>
-
     </div>
   );
 };
 
-export default BusinessUnitPage;
+export default JobRolePage;

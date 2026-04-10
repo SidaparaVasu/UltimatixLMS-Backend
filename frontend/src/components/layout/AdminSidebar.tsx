@@ -11,6 +11,8 @@ import {
   ShieldCheck,
   Building2,
   Network,
+  MapPin,
+  Briefcase,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { getFullName, getInitials, getPrimaryRoleName } from "@/utils/user.utils";
@@ -34,6 +36,8 @@ export const AdminSidebar = () => {
       items: [
         { label: "Business Units", icon: Building2, path: "/admin/business-units", badge: null },
         { label: "Departments", icon: Network, path: "/admin/departments", badge: null },
+        { label: "Unit Locations", icon: MapPin, path: "/admin/unit-locations", badge: null },
+        { label: "Job Roles", icon: Briefcase, path: "/admin/job-roles", badge: null },
       ]
     },
     {

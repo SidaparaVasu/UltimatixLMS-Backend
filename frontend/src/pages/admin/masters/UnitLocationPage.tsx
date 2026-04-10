@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { useBusinessUnits } from '@/queries/admin/useAdminMasters';
-import { BusinessUnit } from '@/api/admin-mock-api';
+import { useLocations } from '@/queries/admin/useAdminMasters';
+import { Location } from '@/api/admin-mock-api';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminActionBar } from '@/components/admin/AdminActionBar';
 import { AdminTableSkeleton } from '@/components/admin/AdminTableSkeleton';
@@ -19,58 +19,65 @@ import {
   TableIdCell
 } from '@/components/ui/table';
 
-const BusinessUnitPage: React.FC = () => {
-  const { data: businessUnits, isLoading, error, refetch } = useBusinessUnits();
+const LocationPage: React.FC = () => {
+  const { data: locations, isLoading, error } = useLocations();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingBU, setEditingBU] = useState<BusinessUnit | null>(null);
+  const [editingLocation, setEditingLocation] = useState<Location | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
     name: '',
     code: '',
-    description: '',
+    city: '',
+    country: '',
     isActive: true
   });
 
-  const handleOpenDialog = (bu?: BusinessUnit) => {
-    if (bu) {
-      setEditingBU(bu);
-      setFormData({ name: bu.name, code: bu.code, description: bu.description, isActive: bu.isActive });
+  const handleOpenDialog = (loc?: Location) => {
+    if (loc) {
+      setEditingLocation(loc);
+      setFormData({ 
+        name: loc.name, 
+        code: loc.code, 
+        city: loc.city,
+        country: loc.country,
+        isActive: loc.isActive 
+      });
     } else {
-      setEditingBU(null);
-      setFormData({ name: '', code: '', description: '', isActive: true });
+      setEditingLocation(null);
+      setFormData({ name: '', code: '', city: '', country: '', isActive: true });
     }
     setIsDialogOpen(true);
   };
 
   const handleSave = () => {
-    // Mock save logic - in a real app, use useMutation here
     console.log('Saved:', formData);
     setIsDialogOpen(false);
   };
 
   // Filter Data
-  const filteredData = businessUnits?.filter(bu => {
+  const filteredData = locations?.filter(loc => {
     const matchesSearch = 
-      bu.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      bu.code.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? bu.isActive : !bu.isActive);
+      loc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      loc.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      loc.city.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? loc.isActive : !loc.isActive);
     return matchesSearch && matchesStatus;
   });
 
   return (
     <div className="content-inner">
-      {/* ── Page Header ── */}
       <AdminPageHeader 
-        title="Business Units"
-        description="Manage the top-level organizational divisions within the company."
+        title="Unit Locations"
+        description="Manage physical office locations and remote hubs across the organization."
         breadcrumbs={[
           { label: 'Admin', href: '/admin' },
           { label: 'Organization' },
-          { label: 'Business Units' }
+          { label: 'Unit Locations' }
         ]}
         action={
           <button 
@@ -90,14 +97,13 @@ const BusinessUnitPage: React.FC = () => {
             }}
           >
             <Plus size={16} />
-            Add Business Unit
+            Add Unit Location
           </button>
         }
       />
 
-      {/* ── Action Bar ── */}
       <AdminActionBar 
-        searchPlaceholder="Search by Business Unit Name or Code..."
+        searchPlaceholder="Search by Location Name, Code, or City..."
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         resultCount={filteredData?.length}
@@ -118,14 +124,14 @@ const BusinessUnitPage: React.FC = () => {
       {isLoading ? (
         <AdminTableSkeleton rowCount={4} columnCount={5} showActionCol />
       ) : error ? (
-        <div className="flex justify-center p-8 text-red-500">Failed to load Business Units.</div>
+        <div className="flex justify-center p-8 text-red-500">Failed to load Locations.</div>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Unit Code</TableHead>
-              <TableHead>Business Unit</TableHead>
-              <TableHead>Description</TableHead>
+              <TableHead>Location Code</TableHead>
+              <TableHead>Location Name</TableHead>
+              <TableHead>City, Country</TableHead>
               <TableHead>Status</TableHead>
               <TableHead style={{ textAlign: 'center' }}>Actions</TableHead>
             </TableRow>
@@ -134,25 +140,25 @@ const BusinessUnitPage: React.FC = () => {
             {filteredData?.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
-                  <span style={{ color: 'var(--color-text-muted)' }}>No business units found.</span>
+                  <span style={{ color: 'var(--color-text-muted)' }}>No locations found.</span>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredData?.map((bu) => (
-                <TableRow key={bu.id}>
-                  <TableIdCell>{bu.code}</TableIdCell>
-                  <TableCell style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{bu.name}</TableCell>
-                  <TableCell>{bu.description}</TableCell>
+              filteredData?.map((loc) => (
+                <TableRow key={loc.id}>
+                  <TableIdCell>{loc.code}</TableIdCell>
+                  <TableCell style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{loc.name}</TableCell>
+                  <TableCell>{loc.city}, {loc.country}</TableCell>
                   <TableCell>
-                    <TableStatusBadge variant={bu.isActive ? 'active' : 'inactive'}>
-                      {bu.isActive ? 'Active' : 'Inactive'}
+                    <TableStatusBadge variant={loc.isActive ? 'active' : 'inactive'}>
+                      {loc.isActive ? 'Active' : 'Inactive'}
                     </TableStatusBadge>
                   </TableCell>
                   <TableActionCell>
                     <TableIconButton 
                       variant="edit" 
-                      title="Edit Business Unit" 
-                      onClick={() => handleOpenDialog(bu)}
+                      title="Edit Location" 
+                      onClick={() => handleOpenDialog(loc)}
                     />
                   </TableActionCell>
                 </TableRow>
@@ -166,8 +172,8 @@ const BusinessUnitPage: React.FC = () => {
       <Dialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        title={editingBU ? "Edit Business Unit" : "Add Business Unit"}
-        description="Enter the details for the business unit below."
+        title={editingLocation ? "Edit Unit Location" : "Add Unit Location"}
+        description="Provide the geographical details for this company site."
         footer={
           <>
             <button 
@@ -200,49 +206,59 @@ const BusinessUnitPage: React.FC = () => {
                 color: '#fff'
               }}
             >
-              {editingBU ? "Update Business Unit" : "Create Business Unit"}
+              {editingLocation ? "Update Unit Location" : "Create Unit Location"}
             </button>
           </>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="form-group">
-            <label className="form-label">Business Unit Code *</label>
+            <label className="form-label">Unit Location Code *</label>
             <input 
               type="text" 
               className="form-input" 
-              placeholder="e.g. BU-ENG" 
+              placeholder="e.g. MUM-BDRA" 
               value={formData.code}
               onChange={e => setFormData({ ...formData, code: e.target.value })}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Business Unit Name *</label>
+            <label className="form-label">Unit Location Name *</label>
             <input 
               type="text" 
               className="form-input" 
-              placeholder="e.g. Engineering"
+              placeholder="e.g. Mumbai Office"
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">Description</label>
-            <textarea 
+            <label className="form-label">City *</label>
+            <input 
+              type="text" 
               className="form-input" 
-              style={{ height: '80px', paddingTop: '8px', resize: 'none' }}
-              placeholder="Brief description of functions..."
-              value={formData.description}
-              onChange={e => setFormData({ ...formData, description: e.target.value })}
+              placeholder="e.g. Mumbai"
+              value={formData.city}
+              onChange={e => setFormData({ ...formData, city: e.target.value })}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Country *</label>
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="e.g. India"
+              value={formData.country}
+              onChange={e => setFormData({ ...formData, country: e.target.value })}
             />
           </div>
 
           <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
             <div>
               <label className="form-label" style={{ display: 'block', color: 'var(--color-text-primary)' }}>Active Status</label>
-              <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Inactive Business Units will be hidden from normal operations.</span>
             </div>
             <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
               <input 
@@ -255,9 +271,8 @@ const BusinessUnitPage: React.FC = () => {
           </div>
         </div>
       </Dialog>
-
     </div>
   );
 };
 
-export default BusinessUnitPage;
+export default LocationPage;

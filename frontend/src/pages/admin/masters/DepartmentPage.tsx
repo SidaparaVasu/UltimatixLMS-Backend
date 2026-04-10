@@ -309,7 +309,7 @@ const DepartmentPage: React.FC = () => {
           </>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="form-group">
             <label className="form-label">Department Code *</label>
             <input 

@@ -42,8 +42,10 @@ export interface Employee {
   profile_image: string;
   date_of_birth: string;
   gender: string;
+  businessUnitId: string;
   departmentId: string; 
-  roleId: string; 
+  roleId: string;
+  locationId: string;
   managerId: string | null; 
   isActive: boolean; 
 }

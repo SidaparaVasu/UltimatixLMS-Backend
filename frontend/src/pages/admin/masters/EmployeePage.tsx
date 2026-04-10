@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, ChevronRight, ChevronLeft, User, Building2, Network, Check } from 'lucide-react';
+import { Plus, ChevronRight, ChevronLeft, User, Building2, Network, Check, X } from 'lucide-react';
 import { useEmployees, useDepartments, useJobRoles, useBusinessUnits, useLocations } from '@/queries/admin/useAdminMasters';
 import { Employee } from '@/api/admin-mock-api';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { AdminActionBar } from '@/components/admin/AdminActionBar';
+import { AdminFilterChips } from '@/components/admin/AdminFilterChips';
 import { AdminTableSkeleton } from '@/components/admin/AdminTableSkeleton';
 import { Dialog } from '@/components/ui/dialog';
 import { 
@@ -28,7 +29,13 @@ const EmployeePage: React.FC = () => {
   const { data: locations } = useLocations();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filters, setFilters] = useState({
+    status: 'all',
+    businessUnit: 'all',
+    department: 'all',
+    location: 'all',
+    role: 'all'
+  });
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
@@ -102,12 +109,32 @@ const EmployeePage: React.FC = () => {
       fullName.includes(searchTerm.toLowerCase()) ||
       emp.employeeCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
       emp.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' ? emp.isActive : !emp.isActive);
-    return matchesSearch && matchesStatus;
+    
+    const matchesStatus = filters.status === 'all' || (filters.status === 'active' ? emp.isActive : !emp.isActive);
+    const matchesBU = filters.businessUnit === 'all' || emp.businessUnitId === filters.businessUnit;
+    const matchesDept = filters.department === 'all' || emp.departmentId === filters.department;
+    const matchesLoc = filters.location === 'all' || emp.locationId === filters.location;
+    const matchesRole = filters.role === 'all' || emp.roleId === filters.role;
+
+    return matchesSearch && matchesStatus && matchesBU && matchesDept && matchesLoc && matchesRole;
   });
 
   const getDeptName = (id: string) => departments?.find(d => d.id === id)?.name || '-';
   const getRoleName = (id: string) => jobRoles?.find(r => r.id === id)?.name || '-';
+  const getBuName = (id: string) => businessUnits?.find(b => b.id === id)?.name || '-';
+  const getLocName = (id: string) => locations?.find(l => l.id === id)?.name || '-';
+  
+  const getFilterLabel = (key: string, val: string) => {
+    if (key === 'status') return val === 'active' ? 'Active' : 'Inactive';
+    if (key === 'department') return getDeptName(val);
+    if (key === 'role') return getRoleName(val);
+    if (key === 'businessUnit') return getBuName(val);
+    if (key === 'location') return getLocName(val);
+    return val;
+  };
+
+  const activeFilters = Object.entries(filters).filter(([key, val]) => val !== 'all');
+
   const getManagerName = (id: string) => {
     if (!id) return '-';
     const m = employees?.find(e => e.id === id);
@@ -263,15 +290,64 @@ const EmployeePage: React.FC = () => {
       >
         <select
           className="form-input"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-          style={{ width: '140px', cursor: 'pointer', flexShrink: 0 }}
+          value={filters.status}
+          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+          style={{ width: '130px', cursor: 'pointer', flexShrink: 0 }}
         >
-          <option value="all">All Statuses</option>
+          <option value="all">Status: All</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
+        
+        <select
+          className="form-input"
+          value={filters.businessUnit}
+          onChange={(e) => setFilters({ ...filters, businessUnit: e.target.value })}
+          style={{ width: '130px', cursor: 'pointer', flexShrink: 0 }}
+        >
+          <option value="all">BU: All</option>
+          {businessUnits?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+        </select>
+        
+        <select
+          className="form-input"
+          value={filters.location}
+          onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+          style={{ width: '130px', cursor: 'pointer', flexShrink: 0 }}
+        >
+          <option value="all">Loc: All</option>
+          {locations?.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+        </select>
+
+        <select
+          className="form-input"
+          value={filters.department}
+          onChange={(e) => setFilters({ ...filters, department: e.target.value })}
+          style={{ width: '130px', cursor: 'pointer', flexShrink: 0 }}
+        >
+          <option value="all">Dept: All</option>
+          {departments?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+        </select>
+
+        <select
+          className="form-input"
+          value={filters.role}
+          onChange={(e) => setFilters({ ...filters, role: e.target.value })}
+          style={{ width: '130px', cursor: 'pointer', flexShrink: 0 }}
+        >
+          <option value="all">Role: All</option>
+          {jobRoles?.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+        </select>
       </AdminActionBar>
+
+      {/* Filter Chips */}
+      <AdminFilterChips 
+        activeFilters={activeFilters}
+        onRemove={(key) => setFilters(prev => ({ ...prev, [key]: 'all' }))}
+        onClearAll={() => setFilters({status: 'all', businessUnit: 'all', department: 'all', location: 'all', role: 'all'})}
+        getLabel={getFilterLabel}
+        getKeyLabel={(key) => key === 'businessUnit' ? 'BU' : key}
+      />
 
       {/* ── Data Table ── */}
       {isLoading ? (

@@ -18,7 +18,6 @@ const RecommendedCard: React.FC<RecommendedCardProps> = ({
 
   return (
     <div className="rec-card">
-      <div className="rec-card-bar" style={{ background: accColor }} />
       <div className="rec-card-body">
         <div className="rec-cat-tag" style={{ color: accColor }}>
           {category}
@@ -51,7 +50,7 @@ export const RecommendedCourses: React.FC = () => {
       duration: "8h 45m",
       category: "Design",
       rating: "4.9",
-      accColor: "var(--color-info)"
+      accColor: "var(--primary)",
     },
     {
       title: "Microservices Architecture with Go",
@@ -60,7 +59,7 @@ export const RecommendedCourses: React.FC = () => {
       duration: "12h 20m",
       category: "Development",
       rating: "4.8",
-      accColor: "var(--color-info)"
+      accColor: "var(--primary)",
     },
     {
       title: "Effective Communication at Workplace",
@@ -69,7 +68,7 @@ export const RecommendedCourses: React.FC = () => {
       duration: "3h 15m",
       category: "Soft Skills",
       rating: "4.7",
-      accColor: "var(--color-info)"
+      accColor: "var(--primary)",
     }
   ];
 

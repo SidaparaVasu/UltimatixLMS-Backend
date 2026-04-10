@@ -11,7 +11,7 @@ export const CourseStrip: React.FC = () => {
       category: "Data Science",
       progress: 67,
       thumbClass: "thumb-1",
-      accentColor: "var(--color-info)",
+      accentColor: "var(--primary)",
       icon: Code
     },
     {
@@ -19,7 +19,7 @@ export const CourseStrip: React.FC = () => {
       category: "Leadership",
       progress: 35,
       thumbClass: "thumb-2",
-      accentColor: "var(--color-success)",
+      accentColor: "var(--primary)",
       icon: Users
     },
     {
@@ -27,7 +27,7 @@ export const CourseStrip: React.FC = () => {
       category: "Compliance",
       progress: 88,
       thumbClass: "thumb-3",
-      accentColor: "var(--color-danger)",
+      accentColor: "var(--primary)",
       icon: Shield
     },
     {
@@ -35,7 +35,7 @@ export const CourseStrip: React.FC = () => {
       category: "Cloud",
       progress: 12,
       thumbClass: "thumb-4",
-      accentColor: "#7C3AED",
+      accentColor: "var(--primary)",
       icon: Globe
     },
     {
@@ -43,7 +43,7 @@ export const CourseStrip: React.FC = () => {
       category: "Development",
       progress: 45,
       thumbClass: "thumb-1",
-      accentColor: "var(--color-info)",
+      accentColor: "var(--primary)",
       icon: Code
     },
     {
@@ -51,7 +51,7 @@ export const CourseStrip: React.FC = () => {
       category: "Strategy",
       progress: 20,
       thumbClass: "thumb-2",
-      accentColor: "#059669",
+      accentColor: "var(--primary)",
       icon: Users
     }
   ];

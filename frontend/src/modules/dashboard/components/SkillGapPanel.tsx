@@ -25,10 +25,10 @@ const data = {
     {
       label: 'Required',
       data: [5, 4, 4, 5, 4],
-      backgroundColor: 'rgba(232, 131, 58, 0.12)',
-      borderColor: '#E8833A',
+      backgroundColor: 'rgba(58, 142, 232, 0.12)',
+      borderColor: 'oklch(0.5461 0.2152 262.8809)',
       borderWidth: 2,
-      pointBackgroundColor: '#E8833A',
+      pointBackgroundColor: 'oklch(0.5461 0.2152 262.8809)',
       pointRadius: 3,
     },
     {

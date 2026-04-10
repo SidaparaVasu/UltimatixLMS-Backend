@@ -11,7 +11,7 @@ import { GamificationStrip } from '@/modules/dashboard/components/GamificationSt
 const DashboardPage: React.FC = () => {
   return (
     <>
-      <WelcomeBanner />
+      {/* <WelcomeBanner /> */}
       <StatsGrid />
       <CourseStrip />
       

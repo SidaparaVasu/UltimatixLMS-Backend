@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, BookOpen, Award, BarChart2, TrendingUp, TrendingDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { CheckCircle, BookOpen, Award, BarChart2, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface StatItemProps {
   label: string;
@@ -18,18 +18,20 @@ const StatCard: React.FC<StatItemProps> = ({
 
   return (
     <div className={`kpi-card anim ${delayClass}`}>
-      <div className="kpi-accent-bar" />
-      <div className="kpi-top">
-        <div className="kpi-icon-wrap">
-          <Icon size={16} />
+      <div className="kpi-accent-bar" aria-hidden="true" />
+      <div className="kpi-card-body">
+        <div className="kpi-top">
+          <div className="kpi-icon-wrap">
+            <Icon size={18} />
+          </div>
+          <span className="kpi-label">{label}</span>
         </div>
-        <span className="kpi-label">{label}</span>
-      </div>
-      <div className="kpi-value">{value}</div>
-      <div className={`kpi-trend ${trendDir}`}>
-        <TrendIcon size={12} strokeWidth={2.5} />
-        {trend}
-        <span className="kpi-trend-sub">{trendSub}</span>
+        <div className="kpi-value">{value}</div>
+        <div className={`kpi-trend ${trendDir}`}>
+          <TrendIcon size={12} strokeWidth={2.5} />
+          {trend}
+          <span className="kpi-trend-sub">{trendSub}</span>
+        </div>
       </div>
     </div>
   );

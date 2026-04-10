@@ -16,7 +16,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({
   return (
     <div className="course-card">
       <div className={`course-thumb ${thumbClass}`}>
-        <Icon className="course-thumb-icon" size={48} color="#fff" strokeWidth={1} />
+        <Icon className="course-thumb-icon" size={48} strokeWidth={1} />
         <div className="course-cat-stripe" style={{ background: accentColor }} />
       </div>
       <div className="course-body">

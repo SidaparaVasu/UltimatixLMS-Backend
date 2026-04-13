@@ -10,11 +10,16 @@ import { GamificationStrip } from '@/modules/dashboard/components/GamificationSt
 
 const DashboardPage: React.FC = () => {
   return (
-    <>
+    <div style={{
+      padding: "var(--space-4) 0",
+      display: "flex",
+      flexDirection: "column",
+      gap: "var(--space-6)"
+    }}>
       {/* <WelcomeBanner /> */}
       <StatsGrid />
       <CourseStrip />
-      
+
       <div className="two-col anim delay-3">
         <SkillGapPanel />
         <CalendarPanel />
@@ -28,7 +33,7 @@ const DashboardPage: React.FC = () => {
         <ActivityFeed />
         <NotificationPanel />
       </div>
-    </>
+    </div>
   );
 };
 

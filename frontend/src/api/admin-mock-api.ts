@@ -77,9 +77,9 @@ const MOCK_ROLES: JobRole[] = [
 ];
 
 const MOCK_EMPLOYEES: Employee[] = [
-  { id: '1', employeeCode: 'EMP-001', firstName: 'Alice', lastName: 'Admin', email: 'alice@example.com', departmentId: '1', roleId: '2', managerId: null, isActive: true },
-  { id: '2', employeeCode: 'EMP-002', firstName: 'Bob', lastName: 'Builder', email: 'bob@example.com', departmentId: '2', roleId: '1', managerId: '1', isActive: true },
-  { id: '3', employeeCode: 'EMP-003', firstName: 'Charlie', lastName: 'Sales', email: 'charlie@example.com', departmentId: '3', roleId: '3', managerId: null, isActive: true },
+  { id: '1', username: 'alice.admin',   employeeCode: 'EMP-001', firstName: 'Alice',   lastName: 'Admin',   email: 'alice@example.com',   mobile_no: '9001000001', profile_image: '', date_of_birth: '1990-05-12', gender: 'female', businessUnitId: '1', departmentId: '1', roleId: '2', locationId: '1', managerId: null, isActive: true },
+  { id: '2', username: 'bob.builder',   employeeCode: 'EMP-002', firstName: 'Bob',     lastName: 'Builder', email: 'bob@example.com',     mobile_no: '9001000002', profile_image: '', date_of_birth: '1992-08-20', gender: 'male',   businessUnitId: '1', departmentId: '2', roleId: '1', locationId: '1', managerId: '1', isActive: true },
+  { id: '3', username: 'charlie.sales', employeeCode: 'EMP-003', firstName: 'Charlie', lastName: 'Sales',   email: 'charlie@example.com', mobile_no: '9001000003', profile_image: '', date_of_birth: '1988-11-03', gender: 'male',   businessUnitId: '2', departmentId: '3', roleId: '3', locationId: '2', managerId: null, isActive: true },
 ];
 
 // Reusable fixed delay to simulate network latency cleanly
@@ -90,5 +90,99 @@ export const adminMockApi = {
   getDepartments: async () => { await simulateNetwork(); return [...MOCK_DEPTS]; },
   getLocations: async () => { await simulateNetwork(); return [...MOCK_LOCATIONS]; },
   getJobRoles: async () => { await simulateNetwork(); return [...MOCK_ROLES]; },
-  getEmployees: async () => { await simulateNetwork(); return [...MOCK_EMPLOYEES]; }
+  getEmployees: async () => { await simulateNetwork(); return [...MOCK_EMPLOYEES]; },
+  // ── Phase 2: Competency ──
+  getSkillCategories: async () => { await simulateNetwork(); return [...MOCK_SKILL_CATEGORIES]; },
+  getSkills: async () => { await simulateNetwork(); return [...MOCK_SKILLS]; },
+  getSkillLevels: async () => { await simulateNetwork(); return [...MOCK_SKILL_LEVELS]; },
+  getSkillMappings: async () => { await simulateNetwork(); return [...MOCK_SKILL_MAPPINGS]; },
 };
+
+/* ═══════════════════════════════════════════════════════════════
+   PHASE 2: COMPETENCY & SKILL MANAGEMENT
+═══════════════════════════════════════════════════════════════ */
+
+// ── Interfaces ──
+export interface SkillCategory {
+  id: string;
+  name: string;
+  code: string;
+  description: string;
+  isActive: boolean;
+}
+
+export interface Skill {
+  id: string;
+  name: string;
+  code: string;
+  /** Optional parent skill id for hierarchical skills */
+  parentId: string | null;
+  description: string;
+  isActive: boolean;
+}
+
+export interface SkillLevel {
+  id: string;
+  name: string;
+  rank: number;
+  description: string;
+}
+
+/** Maps skills to categories — many-to-many */
+export interface SkillCategoryMapping {
+  id: string;
+  categoryId: string;
+  skillId: string;
+}
+
+// ── Mock Data ──
+const MOCK_SKILL_CATEGORIES: SkillCategory[] = [
+  { id: 'sc-1', name: 'Technical Skills',       code: 'TECH',    description: 'Engineering and technology skills',        isActive: true  },
+  { id: 'sc-2', name: 'Soft Skills',            code: 'SOFT',    description: 'Communication and interpersonal skills',   isActive: true  },
+  { id: 'sc-3', name: 'Leadership',             code: 'LEAD',    description: 'Team and organizational leadership',       isActive: true  },
+  { id: 'sc-4', name: 'Data & Analytics',       code: 'DATA',    description: 'Data analysis and visualization skills',   isActive: true  },
+  { id: 'sc-5', name: 'Project Management',     code: 'PM',      description: 'Planning, delivery, and coordination',    isActive: true  },
+  { id: 'sc-6', name: 'Compliance & Security',  code: 'COMP',    description: 'Regulatory and information security',     isActive: false },
+];
+
+const MOCK_SKILLS: Skill[] = [
+  { id: 'sk-1',  name: 'React',            code: 'REACT',   parentId: null,   description: 'React.js library',             isActive: true  },
+  { id: 'sk-2',  name: 'TypeScript',       code: 'TS',      parentId: null,   description: 'Typed JavaScript',             isActive: true  },
+  { id: 'sk-3',  name: 'Python',           code: 'PY',      parentId: null,   description: 'Python programming language',  isActive: true  },
+  { id: 'sk-4',  name: 'Django',           code: 'DJANGO',  parentId: 'sk-3', description: 'Python web framework',         isActive: true  },
+  { id: 'sk-5',  name: 'Communication',    code: 'COMM',    parentId: null,   description: 'Verbal and written comms',     isActive: true  },
+  { id: 'sk-6',  name: 'Active Listening', code: 'LISTEN',  parentId: 'sk-5', description: 'Interpersonal listening',      isActive: true  },
+  { id: 'sk-7',  name: 'People Management', code: 'PEOPLE', parentId: null,   description: 'Managing teams effectively',  isActive: true  },
+  { id: 'sk-8',  name: 'Strategic Thinking', code: 'STRAT', parentId: null,   description: 'Long-range planning skills',   isActive: true  },
+  { id: 'sk-9',  name: 'SQL',              code: 'SQL',     parentId: null,   description: 'Structured query language',    isActive: true  },
+  { id: 'sk-10', name: 'Power BI',         code: 'PBI',     parentId: null,   description: 'Business intelligence tool',  isActive: true  },
+  { id: 'sk-11', name: 'Agile / Scrum',    code: 'AGILE',   parentId: null,   description: 'Agile delivery framework',    isActive: true  },
+  { id: 'sk-12', name: 'Risk Management',  code: 'RISK',    parentId: null,   description: 'Identifying and managing risk', isActive: true },
+];
+
+const MOCK_SKILL_LEVELS: SkillLevel[] = [
+  { id: 'sl-1', name: 'Basic',        rank: 1, description: 'Foundational awareness' },
+  { id: 'sl-2', name: 'Intermediate', rank: 2, description: 'Can work independently'  },
+  { id: 'sl-3', name: 'Advanced',     rank: 3, description: 'Expert-level proficiency' },
+];
+
+const MOCK_SKILL_MAPPINGS: SkillCategoryMapping[] = [
+  // Technical
+  { id: 'map-1',  categoryId: 'sc-1', skillId: 'sk-1'  },
+  { id: 'map-2',  categoryId: 'sc-1', skillId: 'sk-2'  },
+  { id: 'map-3',  categoryId: 'sc-1', skillId: 'sk-3'  },
+  { id: 'map-4',  categoryId: 'sc-1', skillId: 'sk-4'  },
+  // Soft Skills
+  { id: 'map-5',  categoryId: 'sc-2', skillId: 'sk-5'  },
+  { id: 'map-6',  categoryId: 'sc-2', skillId: 'sk-6'  },
+  // Leadership
+  { id: 'map-7',  categoryId: 'sc-3', skillId: 'sk-7'  },
+  { id: 'map-8',  categoryId: 'sc-3', skillId: 'sk-8'  },
+  // Data — no mappings yet (to show empty state)
+  // Project Management
+  { id: 'map-9',  categoryId: 'sc-5', skillId: 'sk-11' },
+  { id: 'map-10', categoryId: 'sc-5', skillId: 'sk-12' },
+  // SQL also in Data
+  { id: 'map-11', categoryId: 'sc-4', skillId: 'sk-9'  },
+  { id: 'map-12', categoryId: 'sc-4', skillId: 'sk-10' },
+];

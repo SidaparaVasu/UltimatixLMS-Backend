@@ -7,6 +7,11 @@ export const ADMIN_QUERY_KEYS = {
   locations: ['admin', 'locations'],
   jobRoles: ['admin', 'job-roles'],
   employees: ['admin', 'employees'],
+  // Phase 2: Competency
+  skillCategories: ['admin', 'skill-categories'],
+  skills: ['admin', 'skills'],
+  skillLevels: ['admin', 'skill-levels'],
+  skillMappings: ['admin', 'skill-mappings'],
 };
 
 export const useBusinessUnits = () => {
@@ -43,3 +48,18 @@ export const useEmployees = () => {
     queryFn: adminMockApi.getEmployees,
   });
 };
+
+// ── Phase 2: Competency hooks ──
+
+export const useSkillCategories = () =>
+  useQuery({ queryKey: ADMIN_QUERY_KEYS.skillCategories, queryFn: adminMockApi.getSkillCategories });
+
+export const useSkills = () =>
+  useQuery({ queryKey: ADMIN_QUERY_KEYS.skills, queryFn: adminMockApi.getSkills });
+
+export const useSkillLevels = () =>
+  useQuery({ queryKey: ADMIN_QUERY_KEYS.skillLevels, queryFn: adminMockApi.getSkillLevels });
+
+export const useSkillMappings = () =>
+  useQuery({ queryKey: ADMIN_QUERY_KEYS.skillMappings, queryFn: adminMockApi.getSkillMappings });
+

@@ -22,6 +22,7 @@ const DepartmentPage = lazy(() => import('@/pages/admin/masters/DepartmentPage')
 const LocationPage = lazy(() => import('@/pages/admin/masters/UnitLocationPage'));
 const JobRolePage = lazy(() => import('@/pages/admin/masters/JobRolePage'));
 const EmployeePage = lazy(() => import('@/pages/admin/masters/EmployeePage'));
+const CompetencyMasterPage = lazy(() => import('@/pages/admin/masters/CompetencyMasterPage'));
 
 // Placeholder for pages that are not yet implemented
 const ComingSoon = () => (
@@ -79,6 +80,7 @@ export const AppRoutes = () => {
                 <Route path="/admin/unit-locations" element={<LocationPage />} />
                 <Route path="/admin/job-roles" element={<JobRolePage />} />
                 <Route path="/admin/employees" element={<EmployeePage />} />
+                <Route path="/admin/competency" element={<CompetencyMasterPage />} />
                 <Route path="/admin/settings" element={<ComingSoon />} />
               </Route>
             </Route>

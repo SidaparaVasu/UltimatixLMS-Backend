@@ -13,6 +13,9 @@ import {
   useJobRoles,
   useBusinessUnits,
   useLocations,
+  useSkills,
+  useSkillLevels,
+  useEmployeeSkills,
 } from "@/queries/admin/useAdminMasters";
 import { Employee } from "@/api/admin-mock-api";
 import { AdminMasterLayout } from "@/components/admin/layout/AdminMasterLayout";
@@ -23,6 +26,8 @@ import {
 import { AdminInput, AdminSelect, AdminToggle } from "@/components/admin/form";
 import { Dialog } from "@/components/ui/dialog";
 import { Drawer } from "@/components/ui/drawer";
+import { ProficiencyBadge } from "@/components/ui/proficiency-badge";
+import { UnifiedSkillMappingModal, SkillMappingEntry } from "@/components/admin/UnifiedSkillMappingModal";
 
 /* ─────────────────────────────────────────────────────────────
    FORM SHAPE
@@ -135,6 +140,13 @@ const EmployeePage: React.FC = () => {
   const { data: jobRoles } = useJobRoles();
   const { data: businessUnits } = useBusinessUnits();
   const { data: locations } = useLocations();
+  const { data: allSkills = [] } = useSkills();
+  const { data: allLevels = [] } = useSkillLevels();
+  const { data: empSkills = [] } = useEmployeeSkills();
+  
+  /* ── Mapping state ── */
+  const [mappingEmp, setMappingEmp] = useState<Employee | null>(null);
+  const [isMappingOpen, setIsMappingOpen] = useState(false);
 
   /* ── Local state (can't use useAdminCRUD — multi-step needs currentStep) ── */
   const [searchTerm, setSearchTerm] = useState("");
@@ -234,6 +246,25 @@ const EmployeePage: React.FC = () => {
     closeDialog();
   };
 
+  /* ── Mapping logic ── */
+  const handleOpenMapping = (emp: Employee) => {
+    setMappingEmp(emp);
+    setIsMappingOpen(true);
+  };
+
+  const currentMappings: SkillMappingEntry[] = empSkills
+    .filter(es => es.employeeId === mappingEmp?.id)
+    .map(es => ({ 
+      skillId: es.skillId, 
+      levelId: es.assessedLevelId,
+      status: es.status 
+    }));
+
+  const handleSaveMapping = (mappings: SkillMappingEntry[]) => {
+    console.log('Saving Employee Skills for', mappingEmp?.firstName, mappings);
+    // Logic to update backend would go here
+  };
+
   /* ── Filtering ── */
   const filteredData = employees?.filter((emp) => {
     const q = searchTerm.toLowerCase();
@@ -317,6 +348,7 @@ const EmployeePage: React.FC = () => {
         setIsViewDrawerOpen(true);
       },
       onEdit: openDialog,
+      onMap: handleOpenMapping,
     },
   ];
 
@@ -1000,10 +1032,64 @@ const EmployeePage: React.FC = () => {
                   />
                 </TwoColGrid>
               </div>
+
+              <div>
+                <SectionHeader title="Competency Profile" />
+                {empSkills.filter(es => es.employeeId === viewingEmp.id).length === 0 ? (
+                  <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', italic: 'true' } as any}>
+                    No skill assessments recorded.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                    {empSkills
+                      .filter(es => es.employeeId === viewingEmp.id)
+                      .map(es => {
+                        const skill = allSkills.find(s => s.id === es.skillId);
+                        const level = allLevels.find(l => l.id === es.assessedLevelId);
+                        if (!skill) return null;
+                        return (
+                          <div 
+                            key={es.id} 
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              padding: 'var(--space-2) var(--space-3)',
+                              background: 'var(--color-canvas)',
+                              borderRadius: 'var(--radius-md)',
+                              border: '1px solid var(--color-border)'
+                            }}
+                          >
+                            <span style={{ fontSize: '13px', fontWeight: 500 }}>{skill.name}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                              <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
+                                {es.status === 'VERIFIED' ? '✓ Verified' : 'Pending'}
+                              </span>
+                              <ProficiencyBadge level={level?.name || 'Not Rated'} rank={level?.rank || 0} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
       </Drawer>
+
+      {/* ── Skill Mapping Modal ── */}
+      <UnifiedSkillMappingModal
+        open={isMappingOpen}
+        onClose={() => setIsMappingOpen(false)}
+        title={`Assess Skills: ${mappingEmp?.firstName} ${mappingEmp?.lastName}`}
+        description="Record verified or self-assessed proficiency levels."
+        type="EMPLOYEE"
+        allSkills={allSkills}
+        allLevels={allLevels}
+        initialMappings={currentMappings}
+        onSave={handleSaveMapping}
+      />
     </AdminMasterLayout>
   );
 };

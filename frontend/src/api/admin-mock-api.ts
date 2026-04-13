@@ -96,6 +96,8 @@ export const adminMockApi = {
   getSkills: async () => { await simulateNetwork(); return [...MOCK_SKILLS]; },
   getSkillLevels: async () => { await simulateNetwork(); return [...MOCK_SKILL_LEVELS]; },
   getSkillMappings: async () => { await simulateNetwork(); return [...MOCK_SKILL_MAPPINGS]; },
+  getJobRoleSkills: async () => { await simulateNetwork(); return [...MOCK_JOB_ROLE_SKILLS]; },
+  getEmployeeSkills: async () => { await simulateNetwork(); return [...MOCK_EMPLOYEE_SKILLS]; },
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -133,6 +135,24 @@ export interface SkillCategoryMapping {
   id: string;
   categoryId: string;
   skillId: string;
+}
+
+/** Mapping of skills required by a Job Role */
+export interface JobRoleSkillRequirement {
+  id: string;
+  jobRoleId: string;
+  skillId: string;
+  requiredLevelId: string;
+}
+
+/** Mapping of skills possessed/assessed for an Employee */
+export interface EmployeeSkillAssessment {
+  id: string;
+  employeeId: string;
+  skillId: string;
+  assessedLevelId: string;
+  status: 'SELF_ASSESSED' | 'VERIFIED' | 'PENDING';
+  updatedAt: string;
 }
 
 // ── Mock Data ──
@@ -185,4 +205,20 @@ const MOCK_SKILL_MAPPINGS: SkillCategoryMapping[] = [
   // SQL also in Data
   { id: 'map-11', categoryId: 'sc-4', skillId: 'sk-9'  },
   { id: 'map-12', categoryId: 'sc-4', skillId: 'sk-10' },
+];
+
+const MOCK_JOB_ROLE_SKILLS: JobRoleSkillRequirement[] = [
+  // Software Engineer (id: '1')
+  { id: 'jrs-1', jobRoleId: '1', skillId: 'sk-1', requiredLevelId: 'sl-2' }, // React - Intermediate
+  { id: 'jrs-2', jobRoleId: '1', skillId: 'sk-2', requiredLevelId: 'sl-2' }, // TS - Intermediate
+  { id: 'jrs-3', jobRoleId: '1', skillId: 'sk-3', requiredLevelId: 'sl-1' }, // Python - Basic
+];
+
+const MOCK_EMPLOYEE_SKILLS: EmployeeSkillAssessment[] = [
+  // Alice (id: '1')
+  { id: 'esa-1', employeeId: '1', skillId: 'sk-3', assessedLevelId: 'sl-3', status: 'VERIFIED', updatedAt: '2023-11-01' }, // Python - Advanced
+  { id: 'esa-2', employeeId: '1', skillId: 'sk-7', assessedLevelId: 'sl-2', status: 'VERIFIED', updatedAt: '2023-12-05' }, // People Mgmt - Intermediate
+  // Bob (id: '2')
+  { id: 'esa-3', employeeId: '2', skillId: 'sk-1', assessedLevelId: 'sl-2', status: 'VERIFIED', updatedAt: '2024-01-10' }, // React - Intermediate
+  { id: 'esa-4', employeeId: '2', skillId: 'sk-2', assessedLevelId: 'sl-1', status: 'PENDING',  updatedAt: '2024-02-15' }, // TS - Basic
 ];

@@ -15,6 +15,7 @@ from .models import (
 
 
 class CourseCategorySerializer(serializers.ModelSerializer):
+    course_count = serializers.IntegerField(read_only=True)
     class Meta:
         model = CourseCategoryMaster
         fields = "__all__"

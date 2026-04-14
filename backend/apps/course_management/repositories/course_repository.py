@@ -12,10 +12,15 @@ from ..models import (
     CourseDiscussionThread,
     CourseDiscussionReply
 )
+from django.db.models import Count
 
 
 class CourseCategoryRepository(BaseRepository[CourseCategoryMaster]):
     model = CourseCategoryMaster
+
+    def get_list_with_counts(self):
+        """Fetches all categories annotated with the count of linked courses."""
+        return self.model.objects.annotate(course_count=Count('courses'))
 
 
 class CourseRepository(BaseRepository[CourseMaster]):

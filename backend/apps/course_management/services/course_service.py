@@ -17,6 +17,10 @@ from ..repositories import (
 class CourseCategoryService(BaseService):
     repository_class = CourseCategoryRepository
 
+    def get_all_with_counts(self):
+        """Business logic hook to retrieve categories with their metrics."""
+        return self.repository.get_list_with_counts()
+
 
 class CourseService(BaseService):
     repository_class = CourseRepository

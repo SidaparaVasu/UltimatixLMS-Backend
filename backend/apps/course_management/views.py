@@ -112,6 +112,9 @@ class CourseCategoryViewSet(BaseCourseViewSet):
     service_class = CourseCategoryService
     model = CourseCategoryMaster
 
+    def get_queryset(self):
+        return self.service_class().get_all_with_counts()
+
 
 class TagViewSet(BaseCourseViewSet):
     queryset = TagMaster.objects.all()

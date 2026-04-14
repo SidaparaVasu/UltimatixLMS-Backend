@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ToggleLeft, ToggleRight } from "lucide-react";
 import {
   useJobRoles,
   useSkills,
@@ -9,6 +8,7 @@ import {
   ADMIN_QUERY_KEYS,
 } from "@/queries/admin/useAdminMasters";
 import { organizationApi, JobRole } from "@/api/organization-api";
+import { skillApi } from "@/api/skill-api";
 import { useAdminCRUD } from "@/hooks/admin/useAdminCRUD";
 import { AdminMasterLayout } from "@/components/admin/layout/AdminMasterLayout";
 import {
@@ -63,8 +63,8 @@ const buildColumns = (
     type: "custom",
     header: "Required Skills",
     render: (role) => {
-      // Note: Skill mapping currently uses mock data structure for IDs
-      const mapped = roleSkills.filter((rs) => rs.jobRoleId === role.id);
+      // Find mappings for this role
+      const mapped = roleSkills.filter((rs) => rs.job_role === role.id);
       return (
         <CellScrollArea style={{ maxWidth: "500px" }}>
           {mapped.length === 0 ? (
@@ -81,8 +81,8 @@ const buildColumns = (
             </span>
           ) : (
             mapped.map((m) => {
-              const s = allSkills.find((sk) => sk.id === m.skillId);
-              return s ? <SkillTag key={m.id} name={s.name || s.skill_name} /> : null;
+              const s = allSkills.find((sk) => sk.id === m.skill);
+              return s ? <SkillTag key={m.id} name={s.skill_name} /> : null;
             })
           )}
         </CellScrollArea>
@@ -99,9 +99,16 @@ const JobRolePage: React.FC = () => {
   const pageSize = 10;
 
   const { data: response, isLoading, error } = useJobRoles({ page, page_size: pageSize });
-  const { data: allSkills = [] } = useSkills();
-  const { data: allLevels = [] } = useSkillLevels();
-  const { data: roleSkills = [] } = useJobRoleSkills();
+  
+  // Unwrap PaginatedResponse data
+  const { data: skillsRes } = useSkills();
+  const allSkills = skillsRes?.results || [];
+
+  const { data: levelsRes } = useSkillLevels();
+  const allLevels = levelsRes?.results || [];
+
+  const { data: roleSkillsRes } = useJobRoleSkills();
+  const roleSkills = roleSkillsRes?.results || [];
 
   const [mappingRole, setMappingRole] = useState<JobRole | null>(null);
   const [isMappingOpen, setIsMappingOpen] = useState(false);
@@ -123,6 +130,16 @@ const JobRolePage: React.FC = () => {
       organizationApi.updateJobRole(id, { is_active }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.jobRoles });
+    },
+  });
+
+  const syncMappingMutation = useMutation({
+    mutationFn: (data: { 
+      job_role_id: number; requirements: { skill_id: number; level_id: number }[] }) => 
+      skillApi.bulkSyncRoleRequirements(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.jobRoleSkills });
+      setIsMappingOpen(false);
     },
   });
 
@@ -171,12 +188,25 @@ const JobRolePage: React.FC = () => {
   };
 
   const currentMappings: SkillMappingEntry[] = roleSkills
-    .filter((rs) => rs.jobRoleId === mappingRole?.id)
-    .map((rs) => ({ skillId: rs.skillId, levelId: rs.requiredLevelId }));
+    .filter((rs) => rs.job_role === mappingRole?.id)
+    .map((rs) => ({ 
+      skillId: String(rs.skill), 
+      levelId: String(rs.required_level) 
+    }));
 
   const handleSaveMapping = (mappings: SkillMappingEntry[]) => {
-    console.log("Saving Job Role Skills for", mappingRole?.job_role_name, mappings);
-    // Logic to update backend would go here
+    if (!mappingRole) return;
+    
+    // Convert modal structure to API structure
+    const requirements = mappings.map(m => ({
+      skill_id: Number(m.skillId),
+      level_id: Number(m.levelId)
+    }));
+
+    syncMappingMutation.mutate({
+      job_role_id: mappingRole.id,
+      requirements
+    });
   };
 
   return (

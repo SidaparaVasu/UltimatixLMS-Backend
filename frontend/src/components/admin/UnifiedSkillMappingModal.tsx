@@ -4,7 +4,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Combobox } from '@/components/ui/combobox';
 import { DialogFooterActions } from '@/components/admin/form';
 import { ProficiencyBadge } from '@/components/ui/proficiency-badge';
-import { Skill, SkillLevel } from '@/api/admin-mock-api';
+import { Skill, SkillLevel } from '@/api/skill-api';
 
 export interface SkillMappingEntry {
   skillId: string;
@@ -48,13 +48,13 @@ export const UnifiedSkillMappingModal: React.FC<UnifiedSkillMappingModalProps> =
     }
   }, [open, initialMappings]);
 
-  const skillsById = useMemo(() => new Map(allSkills.map(s => [s.id, s])), [allSkills]);
-  const levelsById = useMemo(() => new Map(allLevels.map(l => [l.id, l])), [allLevels]);
+  const skillsById = useMemo(() => new Map(allSkills.map(s => [String(s.id), s])), [allSkills]);
+  const levelsById = useMemo(() => new Map(allLevels.map(l => [String(l.id), l])), [allLevels]);
 
   const skillOptions = useMemo(() => 
     allSkills
-      .filter(s => s.isActive)
-      .map(s => ({ value: s.id, label: s.name })), 
+      .filter(s => s.is_active)
+      .map(s => ({ value: String(s.id), label: s.skill_name })), 
   [allSkills]);
 
   const handleAddSkill = (skillIds: string[]) => {
@@ -66,7 +66,7 @@ export const UnifiedSkillMappingModal: React.FC<UnifiedSkillMappingModalProps> =
 
     const newEntries: SkillMappingEntry[] = newIds.map(id => ({
       skillId: id,
-      levelId: allLevels[0]?.id || '', // Default to first level
+      levelId: String(allLevels[0]?.id || ''), // Default to first level
       status: type === 'EMPLOYEE' ? 'PENDING' : undefined
     }));
 
@@ -171,8 +171,8 @@ export const UnifiedSkillMappingModal: React.FC<UnifiedSkillMappingModalProps> =
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                      <div style={{ fontWeight: 600, fontSize: '13px' }}>{skill.name}</div>
-                      <ProficiencyBadge level={level?.name || 'Set Level'} rank={level?.rank || 0} />
+                      <div style={{ fontWeight: 600, fontSize: '13px' }}>{skill.skill_name}</div>
+                      <ProficiencyBadge level={level?.level_name || 'Set Level'} rank={level?.level_rank || 0} />
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
@@ -183,7 +183,7 @@ export const UnifiedSkillMappingModal: React.FC<UnifiedSkillMappingModalProps> =
                         style={{ padding: '2px 8px', fontSize: '12px', width: 'auto', height: '28px' }}
                       >
                         {allLevels.map(l => (
-                          <option key={l.id} value={l.id}>{l.name}</option>
+                          <option key={l.id} value={String(l.id)}>{l.level_name}</option>
                         ))}
                       </select>
                       

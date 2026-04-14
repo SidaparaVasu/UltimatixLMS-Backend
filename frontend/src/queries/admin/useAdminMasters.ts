@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminMockApi } from '@/api/admin-mock-api';
 import { organizationApi } from '@/api/organization-api';
+import { skillApi } from '@/api/skill-api';
 
 export const ADMIN_QUERY_KEYS = {
   businessUnits: ['admin', 'business-units'],
@@ -59,16 +60,16 @@ export const useSkillCategories = () =>
   useQuery({ queryKey: ADMIN_QUERY_KEYS.skillCategories, queryFn: adminMockApi.getSkillCategories });
 
 export const useSkills = () =>
-  useQuery({ queryKey: ADMIN_QUERY_KEYS.skills, queryFn: adminMockApi.getSkills });
+  useQuery({ queryKey: ADMIN_QUERY_KEYS.skills, queryFn: skillApi.getSkills });
 
 export const useSkillLevels = () =>
-  useQuery({ queryKey: ADMIN_QUERY_KEYS.skillLevels, queryFn: adminMockApi.getSkillLevels });
+  useQuery({ queryKey: ADMIN_QUERY_KEYS.skillLevels, queryFn: skillApi.getSkillLevels });
 
 export const useSkillMappings = () =>
   useQuery({ queryKey: ADMIN_QUERY_KEYS.skillMappings, queryFn: adminMockApi.getSkillMappings });
 
 export const useJobRoleSkills = () =>
-  useQuery({ queryKey: ADMIN_QUERY_KEYS.jobRoleSkills, queryFn: adminMockApi.getJobRoleSkills });
+  useQuery({ queryKey: ADMIN_QUERY_KEYS.jobRoleSkills, queryFn: skillApi.getRoleRequirements });
 
 export const useEmployeeSkills = () =>
   useQuery({ queryKey: ADMIN_QUERY_KEYS.employeeSkills, queryFn: adminMockApi.getEmployeeSkills });

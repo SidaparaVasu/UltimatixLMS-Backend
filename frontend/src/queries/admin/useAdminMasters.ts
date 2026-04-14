@@ -58,16 +58,32 @@ export const useEmployees = () => {
 // ── Competency hooks ──
 
 export const useSkillCategories = () =>
-  useQuery({ queryKey: ADMIN_QUERY_KEYS.skillCategories, queryFn: adminMockApi.getSkillCategories });
+  useQuery({ 
+    queryKey: ADMIN_QUERY_KEYS.skillCategories, 
+    queryFn: skillApi.getSkillCategories,
+    staleTime: 0,
+  });
 
 export const useSkills = () =>
-  useQuery({ queryKey: ADMIN_QUERY_KEYS.skills, queryFn: skillApi.getSkills });
+  useQuery({ 
+    queryKey: ADMIN_QUERY_KEYS.skills, 
+    queryFn: skillApi.getSkills,
+    staleTime: 0,
+  });
 
 export const useSkillLevels = () =>
-  useQuery({ queryKey: ADMIN_QUERY_KEYS.skillLevels, queryFn: skillApi.getSkillLevels });
+  useQuery({ 
+    queryKey: ADMIN_QUERY_KEYS.skillLevels, 
+    queryFn: skillApi.getSkillLevels,
+    staleTime: 0,
+  });
 
 export const useSkillMappings = () =>
-  useQuery({ queryKey: ADMIN_QUERY_KEYS.skillMappings, queryFn: adminMockApi.getSkillMappings });
+  useQuery({ 
+    queryKey: ADMIN_QUERY_KEYS.skillMappings, 
+    queryFn: skillApi.getSkillMappings,
+    staleTime: 0,
+  });
 
 export const useJobRoleSkills = () =>
   useQuery({ queryKey: ADMIN_QUERY_KEYS.jobRoleSkills, queryFn: skillApi.getRoleRequirements });

@@ -1,17 +1,19 @@
 import React, { useState, useMemo } from 'react';
-import { Layers, Puzzle, BarChart3, Plus } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Layers, Puzzle, Plus, Pencil, Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 import {
   useSkillCategories,
   useSkills,
   useSkillLevels,
   useSkillMappings,
+  ADMIN_QUERY_KEYS,
 } from '@/queries/admin/useAdminMasters';
 import {
   SkillCategory,
   Skill,
   SkillLevel,
-  SkillCategoryMapping,
-} from '@/api/admin-mock-api';
+  skillApi,
+} from '@/api/skill-api';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { SplitLayout, SidebarCard } from '@/components/ui/split-layout';
 import { GridCard, ResponsiveGrid } from '@/components/ui/grid-card';
@@ -21,6 +23,7 @@ import { InlineAdd } from '@/components/ui/inline-add';
 import { CheckboxFilterList } from '@/components/ui/checkbox-filter-list';
 import { QuickActionsList, OrderedItemList } from '@/components/ui/quick-actions';
 import { Dialog } from '@/components/ui/dialog';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { AdminInput, AdminToggle } from '@/components/admin/form';
 import { DialogFooterActions } from '@/components/admin/form';
 
@@ -68,22 +71,23 @@ interface CategoryDialogProps {
   open: boolean;
   onClose: () => void;
   editing: SkillCategory | null;
+  onSave: (data: Partial<SkillCategory>) => void;
+  isLoading?: boolean;
 }
-const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onClose, editing }) => {
-  const [form, setForm] = useState({ name: '', code: '', description: '', isActive: true });
+const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onClose, editing, onSave, isLoading }) => {
+  const [form, setForm] = useState({ category_name: '', category_code: '', description: '', is_active: true });
 
   React.useEffect(() => {
     if (open) {
       setForm(editing
-        ? { name: editing.name, code: editing.code, description: editing.description, isActive: editing.isActive }
-        : { name: '', code: '', description: '', isActive: true }
+        ? { category_name: editing.category_name, category_code: editing.category_code, description: editing.description, is_active: editing.is_active }
+        : { category_name: '', category_code: '', description: '', is_active: true }
       );
     }
   }, [open, editing]);
 
   const handleSave = () => {
-    console.log(editing ? 'Update Category:' : 'Create Category:', form);
-    onClose();
+    onSave(form);
   };
 
   return (
@@ -98,17 +102,18 @@ const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onClose, editing 
           onSave={handleSave}
           isEditing={!!editing}
           label="Category"
-          isSaveDisabled={!form.name.trim() || !form.code.trim()}
+          isSaveDisabled={!form.category_name.trim() || !form.category_code.trim()}
+          isLoading={isLoading}
         />
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 var(--space-4)' }}>
-          <AdminInput label="Category Name" required value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="e.g. Technical Skills" />
-          <AdminInput label="Category Code" required value={form.code} onChange={v => setForm(p => ({ ...p, code: v.toUpperCase() }))} placeholder="e.g. TECH" />
+          <AdminInput label="Category Name" required value={form.category_name} onChange={v => setForm(p => ({ ...p, category_name: v }))} placeholder="e.g. Technical Skills" />
+          <AdminInput label="Category Code" required value={form.category_code} onChange={v => setForm(p => ({ ...p, category_code: v.toUpperCase() }))} placeholder="e.g. TECH" />
         </div>
         <AdminInput label="Description" value={form.description} onChange={v => setForm(p => ({ ...p, description: v }))} placeholder="Brief description of this category" />
-        <AdminToggle label="Active Status" hint="Inactive categories are hidden from skill-gap reports." checked={form.isActive} onChange={v => setForm(p => ({ ...p, isActive: v }))} />
+        <AdminToggle label="Active Status" hint="Inactive categories are hidden from skill-gap reports." checked={form.is_active} onChange={v => setForm(p => ({ ...p, is_active: v }))} />
       </div>
     </Dialog>
   );
@@ -122,27 +127,31 @@ interface SkillDialogProps {
   onClose: () => void;
   editing: Skill | null;
   skills: Skill[];
+  onSave: (data: Partial<Skill>) => void;
+  isLoading?: boolean;
 }
-const SkillDialog: React.FC<SkillDialogProps> = ({ open, onClose, editing, skills }) => {
-  const [form, setForm] = useState({ name: '', code: '', description: '', parentId: '', isActive: true });
+const SkillDialog: React.FC<SkillDialogProps> = ({ open, onClose, editing, skills, onSave, isLoading }) => {
+  const [form, setForm] = useState({ skill_name: '', skill_code: '', description: '', parent_skill: '', is_active: true });
 
   React.useEffect(() => {
     if (open) {
       setForm(editing
-        ? { name: editing.name, code: editing.code, description: editing.description, parentId: editing.parentId ?? '', isActive: editing.isActive }
-        : { name: '', code: '', description: '', parentId: '', isActive: true }
+        ? { skill_name: editing.skill_name, skill_code: editing.skill_code, description: editing.description, parent_skill: editing.parent_skill ? String(editing.parent_skill) : '', is_active: editing.is_active }
+        : { skill_name: '', skill_code: '', description: '', parent_skill: '', is_active: true }
       );
     }
   }, [open, editing]);
 
   const handleSave = () => {
-    console.log(editing ? 'Update Skill:' : 'Create Skill:', form);
-    onClose();
+    onSave({
+      ...form,
+      parent_skill: form.parent_skill ? Number(form.parent_skill) : undefined
+    });
   };
 
   const parentOptions = skills
-    .filter(s => s.id !== editing?.id && !s.parentId) // only root skills as parents (no deep nesting)
-    .map(s => ({ label: s.name, value: s.id }));
+    .filter(s => s.id !== editing?.id && !s.parent_skill) 
+    .map(s => ({ label: s.skill_name, value: s.id }));
 
   return (
     <Dialog
@@ -156,29 +165,30 @@ const SkillDialog: React.FC<SkillDialogProps> = ({ open, onClose, editing, skill
           onSave={handleSave}
           isEditing={!!editing}
           label="Skill"
-          isSaveDisabled={!form.name.trim() || !form.code.trim()}
+          isSaveDisabled={!form.skill_name.trim() || !form.skill_code.trim()}
+          isLoading={isLoading}
         />
       }
     >
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 var(--space-4)' }}>
-          <AdminInput label="Skill Name" required value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="e.g. Python" />
-          <AdminInput label="Skill Code" required value={form.code} onChange={v => setForm(p => ({ ...p, code: v.toUpperCase() }))} placeholder="e.g. PY" />
+          <AdminInput label="Skill Name" required value={form.skill_name} onChange={v => setForm(p => ({ ...p, skill_name: v }))} placeholder="e.g. Python" />
+          <AdminInput label="Skill Code" required value={form.skill_code} onChange={v => setForm(p => ({ ...p, skill_code: v.toUpperCase() }))} placeholder="e.g. PY" />
         </div>
         <AdminInput label="Description" value={form.description} onChange={v => setForm(p => ({ ...p, description: v }))} placeholder="Brief description" />
         <div className="form-group">
           <label className="form-label">Parent Skill <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', fontWeight: 400 }}>(optional – for sub-skills)</span></label>
           <select
             className="form-input"
-            value={form.parentId}
-            onChange={e => setForm(p => ({ ...p, parentId: e.target.value }))}
+            value={form.parent_skill}
+            onChange={e => setForm(p => ({ ...p, parent_skill: e.target.value }))}
             style={{ cursor: 'pointer' }}
           >
             <option value="">None (Root Skill)</option>
             {parentOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
-        <AdminToggle label="Active Status" checked={form.isActive} onChange={v => setForm(p => ({ ...p, isActive: v }))} />
+        <AdminToggle label="Active Status" checked={form.is_active} onChange={v => setForm(p => ({ ...p, is_active: v }))} />
       </div>
     </Dialog>
   );
@@ -188,54 +198,130 @@ const SkillDialog: React.FC<SkillDialogProps> = ({ open, onClose, editing, skill
    MAIN PAGE
 ───────────────────────────────────────────────────────────── */
 const CompetencyMasterPage: React.FC = () => {
-  const { data: categories = [], isLoading: catsLoading } = useSkillCategories();
-  const { data: skills = [],     isLoading: skillsLoading } = useSkills();
-  const { data: levels = [] }                               = useSkillLevels();
-  const { data: mappings = [] }                             = useSkillMappings();
+  const queryClient = useQueryClient();
+  const { data: catRes, isLoading: catsLoading } = useSkillCategories();
+  const { data: skillRes, isLoading: skillsLoading } = useSkills();
+  const { data: levelRes } = useSkillLevels();
+  const { data: mappingRes } = useSkillMappings();
+
+  const categories = catRes?.results || [];
+  const skills = skillRes?.results || [];
+  const levels = levelRes?.results || [];
+  const mappings = mappingRes?.results || [];
 
   const isLoading = catsLoading || skillsLoading;
 
   /* ── Local state ── */
-  const [searchTerm, setSearchTerm]               = useState('');
-  const [skillFilter, setSkillFilter]             = useState<string[]>([]);
-  const [categoryDialog, setCategoryDialog]       = useState<{ open: boolean; editing: SkillCategory | null }>({ open: false, editing: null });
-  const [skillDialog, setSkillDialog]             = useState<{ open: boolean; editing: Skill | null }>({ open: false, editing: null });
-
-  /* ── Mapping state (local simulation of server-side mapping updates) ── */
-  const [localMappings, setLocalMappings]         = useState<SkillCategoryMapping[]>([]);
-  const allMappings = useMemo(() => [...mappings, ...localMappings], [mappings, localMappings]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [skillFilter, setSkillFilter] = useState<string[]>([]);
+  const [categoryDialog, setCategoryDialog] = useState<{ open: boolean; editing: SkillCategory | null }>({ open: false, editing: null });
+  const [skillDialog, setSkillDialog] = useState<{ open: boolean; editing: Skill | null }>({ open: false, editing: null });
+  
+  const [expandedMappingId, setExpandedMappingId] = useState<number | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ 
+    open: boolean; 
+    type: 'soft-delete' | 'hard-delete' | 'restore'; 
+    category: SkillCategory | null 
+  }>({ open: false, type: 'soft-delete', category: null });
 
   /* ── Derived data ── */
   const skillsById = useMemo(() => new Map(skills.map(s => [s.id, s])), [skills]);
 
-  const getMappedSkillIds = (catId: string) =>
-    allMappings.filter(m => m.categoryId === catId).map(m => m.skillId);
+  const getMappedSkillIds = (catId: number) =>
+    mappings.filter(m => m.category === catId).map(m => m.skill);
 
-  const handleMappingChange = (catId: string, newSkillIds: string[]) => {
-    const currentIds = getMappedSkillIds(catId);
+  /* ── Mutations ── */
+  const categoryMutation = useMutation({
+    mutationFn: (data: Partial<SkillCategory> & { id?: number }) => {
+      const id = data.id ?? categoryDialog.editing?.id;
+      return id
+        ? skillApi.updateSkillCategory(id, data)
+        : skillApi.createSkillCategory(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.skillCategories });
+      setCategoryDialog({ open: false, editing: null });
+      setConfirmAction(prev => ({ ...prev, open: false }));
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: ({ id, soft }: { id: number; soft: boolean }) => skillApi.deleteSkillCategory(id, soft),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.skillCategories });
+      setConfirmAction(prev => ({ ...prev, open: false }));
+    },
+  });
+
+  const skillMutation = useMutation({
+    mutationFn: (data: Partial<Skill>) =>
+      skillDialog.editing
+        ? skillApi.updateSkill(skillDialog.editing.id, data)
+        : skillApi.createSkill(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.skills });
+      setSkillDialog({ open: false, editing: null });
+    },
+  });
+
+  const levelMutation = useMutation({
+    mutationFn: (data: Partial<SkillLevel>) => skillApi.createSkillLevel(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.skillLevels });
+    },
+  });
+
+  const createMappingMutation = useMutation({
+    mutationFn: (data: { category: number; skill: number }) => skillApi.createSkillMapping(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.skillMappings });
+    },
+  });
+
+  const deleteMappingMutation = useMutation({
+    mutationFn: (id: number) => skillApi.deleteSkillMapping(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.skillMappings });
+    },
+  });
+
+  /* ── Handlers ── */
+  const handleMappingChange = (catId: number, newSkillIds: number[]) => {
+    const currentMappingsForCat = mappings.filter(m => m.category === catId);
+    const currentIds = currentMappingsForCat.map(m => m.skill);
+    
     // add new
     const toAdd = newSkillIds.filter(id => !currentIds.includes(id));
-    // remove deselected
-    const toRemove = currentIds.filter(id => !newSkillIds.includes(id));
+    toAdd.forEach(skillId => createMappingMutation.mutate({ category: catId, skill: skillId }));
 
-    setLocalMappings(prev => {
-      const filtered = prev.filter(m => !(m.categoryId === catId && toRemove.includes(m.skillId)));
-      const newEntries: SkillCategoryMapping[] = toAdd.map(skillId => ({
-        id: `local-${Date.now()}-${skillId}`,
-        categoryId: catId,
-        skillId,
-      }));
-      return [...filtered, ...newEntries];
-    });
-    console.log(`Mapping update for category ${catId}:`, newSkillIds);
+    // Note: Removal is handled via SkillTag onRemove which calls deleteMappingMutation directly
+  };
+
+  const handleRemoveMapping = (catId: number, skillId: number) => {
+    const mapping = mappings.find(m => m.category === catId && m.skill === skillId);
+    if (mapping) {
+      deleteMappingMutation.mutate(mapping.id);
+    }
+  };
+
+  const handleConfirmAction = () => {
+    if (!confirmAction.category) return;
+    
+    if (confirmAction.type === 'soft-delete') {
+      categoryMutation.mutate({ id: confirmAction.category.id, is_active: false });
+    } else if (confirmAction.type === 'restore') {
+      categoryMutation.mutate({ id: confirmAction.category.id, is_active: true });
+    } else if (confirmAction.type === 'hard-delete') {
+      deleteCategoryMutation.mutate({ id: confirmAction.category.id, soft: false });
+    }
   };
 
   /* ─────────────────────────────────────────────────────────────
      SKILL MAPPING FOOTER — staged selection logic
   ───────────────────────────────────────────────────────────── */
   const SkillMappingFooter: React.FC<{ 
-    catId: string; 
-    mappedIds: string[]; 
+    catId: number; 
+    mappedIds: number[]; 
     skillOptions: ComboboxOption[];
     onSkillCreate: (name: string) => void;
   }> = ({ catId, mappedIds, skillOptions, onSkillCreate }) => {
@@ -243,13 +329,13 @@ const CompetencyMasterPage: React.FC = () => {
 
     const handleCommit = () => {
       if (pendingIds.length === 0) return;
-      handleMappingChange(catId, [...mappedIds, ...pendingIds]);
+      handleMappingChange(catId, [...mappedIds, ...pendingIds.map(Number)]);
       setPendingIds([]);
     };
 
     // Filter out skills that are already mapped to this category
     const availableOptions = useMemo(() => 
-      skillOptions.filter(opt => !mappedIds.includes(opt.value)),
+      skillOptions.filter(opt => !mappedIds.includes(Number(opt.value))),
       [skillOptions, mappedIds]
     );
 
@@ -269,77 +355,57 @@ const CompetencyMasterPage: React.FC = () => {
   };
 
   /* ── Inline skill level create via InlineAdd ── */
-  const [localLevels, setLocalLevels] = useState<SkillLevel[]>([]);
-  const allLevels = useMemo(
-    () => [...levels, ...localLevels].sort((a, b) => a.rank - b.rank),
-    [levels, localLevels]
-  );
-
   const handleAddLevel = (name: string) => {
-    const next = allLevels.length + 1;
-    setLocalLevels(prev => [...prev, { id: `local-lv-${Date.now()}`, name, rank: next, description: '' }]);
-    console.log('Create Skill Level:', name);
+    levelMutation.mutate({ level_name: name, level_rank: levels.length + 1, description: '' });
   };
 
   /* ── Inline category create via InlineAdd ── */
-  const [localCategories, setLocalCategories] = useState<SkillCategory[]>([]);
-  const allCategories = useMemo(() => [...categories, ...localCategories], [categories, localCategories]);
-
   const handleAddCategoryInline = (name: string) => {
-    const newCat: SkillCategory = {
-      id: `local-cat-${Date.now()}`,
-      name,
-      code: name.substring(0, 4).toUpperCase(),
+    categoryMutation.mutate({
+      category_name: name,
+      category_code: name.substring(0, 4).toUpperCase(),
       description: '',
-      isActive: true,
-    };
-    setLocalCategories(prev => [...prev, newCat]);
-    console.log('Quick-create Category:', name);
+      is_active: true,
+    });
   };
 
   /* ── Inline skill create via Combobox onCreate ── */
-  const [localSkills, setLocalSkills] = useState<Skill[]>([]);
-  const allSkills = useMemo(() => [...skills, ...localSkills], [skills, localSkills]);
-
   const handleAddSkillInline = (name: string) => {
-    const newSkill: Skill = {
-      id: `local-sk-${Date.now()}`,
-      name,
-      code: name.substring(0, 4).toUpperCase(),
-      parentId: null,
+    skillMutation.mutate({
+      skill_name: name,
+      skill_code: name.substring(0, 4).toUpperCase(),
+      parent_skill: undefined,
       description: '',
-      isActive: true,
-    };
-    setLocalSkills(prev => [...prev, newSkill]);
-    console.log('Quick-create Skill:', name);
+      is_active: true,
+    });
   };
 
   /* ── Filtering logic ── */
-  const filteredCategories = allCategories.filter(cat => {
+  const filteredCategories = categories.filter(cat => {
     // Search by name
-    const matchesSearch = cat.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = cat.category_name.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Skill filter: only show categories that contain ALL selected skills
     const matchesSkills = skillFilter.length === 0 ||
-      skillFilter.every(sid => getMappedSkillIds(cat.id).includes(sid));
+      skillFilter.every(sid => getMappedSkillIds(cat.id).includes(Number(sid)));
 
     return matchesSearch && matchesSkills;
   });
 
   /* ── Combobox options per category (all active skills) ── */
-  const skillOptions: ComboboxOption[] = allSkills
-    .filter(s => s.isActive)
+  const skillOptions: ComboboxOption[] = skills
+    .filter(s => s.is_active)
     .map(s => ({
-      value: s.id,
-      label: s.name,
-      sub: s.parentId ? `Sub-skill of ${skillsById.get(s.parentId)?.name ?? s.parentId}` : s.code,
+      value: String(s.id),
+      label: s.skill_name,
+      sub: s.parent_skill ? `Sub-skill of ${skillsById.get(s.parent_skill)?.skill_name ?? s.parent_skill}` : s.skill_code,
     }));
 
   /* ── Skill filter options (with mapping count) ── */
-  const skillFilterOptions = allSkills.filter(s => s.isActive).map(s => ({
-    value: s.id,
-    label: s.name,
-    count: allMappings.filter(m => m.skillId === s.id).length,
+  const skillFilterOptions = skills.filter(s => s.is_active).map(s => ({
+    value: String(s.id),
+    label: s.skill_name,
+    count: mappings.filter(m => m.skill === s.id).length,
   }));
 
   /* ── Sidebar: Quick Actions ── */
@@ -375,12 +441,12 @@ const CompetencyMasterPage: React.FC = () => {
             onSubmit={handleAddLevel}
             placement="bottom-end"
             width='auto'
-            validate={v => allLevels.some(l => l.name.toLowerCase() === v.toLowerCase()) ? 'Level already exists' : null}
+            validate={v => levels.some(l => l.level_name.toLowerCase() === v.toLowerCase()) ? 'Level already exists' : null}
           />
         }
       >
         <OrderedItemList
-          items={allLevels.map(l => ({ id: l.id, label: l.name, rank: l.rank, sub: l.description || undefined }))}
+          items={levels.map(l => ({ id: String(l.id), label: l.level_name, rank: l.level_rank, sub: l.description || undefined }))}
           emptyText="No skill levels defined yet."
         />
       </SidebarCard>
@@ -443,7 +509,7 @@ const CompetencyMasterPage: React.FC = () => {
           onSubmit={handleAddCategoryInline}
           placement="bottom-end"
           width='auto'
-          validate={v => allCategories.some(c => c.name.toLowerCase() === v.toLowerCase()) ? 'Category already exists' : null}
+          validate={v => categories.some(c => c.category_name.toLowerCase() === v.toLowerCase()) ? 'Category already exists' : null}
         />
       </div>
 
@@ -452,7 +518,7 @@ const CompetencyMasterPage: React.FC = () => {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: 'var(--space-4)' }}>
           <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', alignSelf: 'center' }}>Skills:</span>
           {skillFilter.map(sid => {
-            const skill = allSkills.find(s => s.id === sid);
+            const skill = skills.find(s => s.id === Number(sid));
             return (
               <span
                 key={sid}
@@ -464,7 +530,7 @@ const CompetencyMasterPage: React.FC = () => {
                   fontSize: '12px', fontWeight: 500, color: 'var(--color-accent)',
                 }}
               >
-                {skill?.name ?? sid}
+                {skill?.skill_name ?? sid}
                 <button
                   onClick={() => setSkillFilter(prev => prev.filter(id => id !== sid))}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', padding: 0, color: 'inherit', opacity: 0.7 }}
@@ -513,40 +579,92 @@ const CompetencyMasterPage: React.FC = () => {
         <ResponsiveGrid columns={2} gap="var(--space-4)">
           {filteredCategories.map((cat, idx) => {
             const mappedIds      = getMappedSkillIds(cat.id);
-            const mappedSkills   = mappedIds.map(id => allSkills.find(s => s.id === id)).filter(Boolean) as Skill[];
+            const mappedSkills   = mappedIds.map(id => skills.find(s => s.id === id)).filter(Boolean) as Skill[];
             const accentColor    = ACCENTS[idx % ACCENTS.length];
-            const rootSkills     = mappedSkills.filter(s => !s.parentId);
-            const subSkills      = mappedSkills.filter(s => !!s.parentId);
+            const rootSkills     = mappedSkills.filter(s => !s.parent_skill);
+            const subSkills      = mappedSkills.filter(s => !!s.parent_skill);
+            const isEditing      = expandedMappingId === cat.id;
 
             return (
               <GridCard
                 key={cat.id}
-                title={cat.name}
-                subtitle={cat.code}
-                accentColor={cat.isActive ? accentColor : 'var(--color-text-muted)'}
+                title={cat.category_name}
+                subtitle={cat.category_code}
+                accentColor={cat.is_active ? accentColor : 'var(--color-text-muted)'}
+                style={{ 
+                  opacity: cat.is_active ? 1 : 0.75,
+                  position: 'relative',
+                }}
                 badge={
-                  <span style={{
-                    fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: 'var(--radius-lg)',
-                    background: 'var(--color-surface-alt)', color: 'var(--color-text-muted)',
-                  }}>
-                    {mappedIds.length} skill{mappedIds.length !== 1 ? 's' : ''}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                    <span style={{
+                      fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: 'var(--radius-lg)',
+                      background: 'var(--color-surface-alt)', color: 'var(--color-text-muted)',
+                    }}>
+                      {mappedIds.length} skill{mappedIds.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
                 }
                 headerAction={
-                  !cat.isActive ? (
-                    <span style={{ fontSize: '11px', color: 'var(--color-danger)', fontStyle: 'italic' }}>Inactive</span>
-                  ) : undefined
+                  <div className="card-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button 
+                      onClick={() => setExpandedMappingId(isEditing ? null : cat.id)}
+                      title={isEditing ? "Finish Editing" : "Edit Mapping"}
+                      style={{ 
+                        background: isEditing ? 'var(--color-accent)' : 'none', 
+                        color: isEditing ? 'white' : 'var(--color-text-muted)',
+                        border: 'none', cursor: 'pointer', display: 'flex', padding: '4px', borderRadius: '4px' 
+                      }}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    
+                    {cat.is_active ? (
+                      <button 
+                        onClick={() => setConfirmAction({ open: true, type: 'soft-delete', category: cat })}
+                        title="Deactivate Category"
+                        style={{ background: 'none', color: 'var(--color-text-muted)', border: 'none', cursor: 'pointer', display: 'flex', padding: '4px' }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    ) : (
+                      <>
+                        <button 
+                          onClick={() => setConfirmAction({ open: true, type: 'restore', category: cat })}
+                          title="Restore Category"
+                          style={{ background: 'none', color: 'var(--color-accent)', border: 'none', cursor: 'pointer', display: 'flex', padding: '4px' }}
+                        >
+                          <RotateCcw size={14} />
+                        </button>
+                        <button 
+                          onClick={() => setConfirmAction({ open: true, type: 'hard-delete', category: cat })}
+                          title="Delete Permanently"
+                          style={{ background: 'none', color: 'var(--color-danger)', border: 'none', cursor: 'pointer', display: 'flex', padding: '4px' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 }
                 minContentHeight={100}
                 footer={
-                  <SkillMappingFooter 
-                    catId={cat.id} 
-                    mappedIds={mappedIds} 
-                    skillOptions={skillOptions} 
-                    onSkillCreate={handleAddSkillInline} 
-                  />
+                  isEditing && (
+                    <SkillMappingFooter 
+                      catId={cat.id} 
+                      mappedIds={mappedIds} 
+                      skillOptions={skillOptions} 
+                      onSkillCreate={handleAddSkillInline} 
+                    />
+                  )
                 }
               >
+                {/* CSS to handle hover actions */}
+                <style>{`
+                  .card-actions { visibility: hidden; opacity: 0; transition: all 150ms ease; }
+                  .grid-card:hover .card-actions { visibility: visible; opacity: 1; }
+                `}</style>
+
                 {/* Skill chips */}
                 {mappedSkills.length === 0 ? (
                   <div style={{
@@ -562,16 +680,16 @@ const CompetencyMasterPage: React.FC = () => {
                     {rootSkills.map(s => (
                       <SkillTag 
                         key={s.id} 
-                        name={s.name} 
-                        onRemove={() => handleMappingChange(cat.id, mappedIds.filter(id => id !== s.id))} 
+                        name={s.skill_name} 
+                        onRemove={isEditing ? () => handleRemoveMapping(cat.id, s.id) : undefined} 
                       />
                     ))}
                     {subSkills.map(s => (
                       <SkillTag 
                         key={s.id} 
-                        name={s.name} 
+                        name={s.skill_name} 
                         isSubSkill 
-                        onRemove={() => handleMappingChange(cat.id, mappedIds.filter(id => id !== s.id))} 
+                        onRemove={isEditing ? () => handleRemoveMapping(cat.id, s.id) : undefined} 
                       />
                     ))}
                   </ul>
@@ -636,13 +754,38 @@ const CompetencyMasterPage: React.FC = () => {
         open={categoryDialog.open}
         onClose={() => setCategoryDialog({ open: false, editing: null })}
         editing={categoryDialog.editing}
+        onSave={(data) => categoryMutation.mutate(data)}
+        isLoading={categoryMutation.isPending}
       />
 
       <SkillDialog
         open={skillDialog.open}
         onClose={() => setSkillDialog({ open: false, editing: null })}
         editing={skillDialog.editing}
-        skills={allSkills}
+        skills={skills}
+        onSave={(data) => skillMutation.mutate(data)}
+        isLoading={skillMutation.isPending}
+      />
+
+      <ConfirmationDialog
+        open={confirmAction.open}
+        onClose={() => setConfirmAction({ ...confirmAction, open: false })}
+        onConfirm={handleConfirmAction}
+        title={
+          confirmAction.type === 'soft-delete' ? 'Deactivate Category' :
+          confirmAction.type === 'restore' ? 'Restore Category' : 'Delete Permanently'
+        }
+        confirmLabel={
+          confirmAction.type === 'soft-delete' ? 'Deactivate' :
+          confirmAction.type === 'restore' ? 'Restore' : 'Delete'
+        }
+        variant={confirmAction.type === 'hard-delete' ? 'danger' : confirmAction.type === 'soft-delete' ? 'warning' : 'primary'}
+        description={
+          confirmAction.type === 'soft-delete' ? `Are you sure you want to deactivate "${confirmAction.category?.category_name}"? It will no longer appear in reports but will be kept for historical records.` :
+          confirmAction.type === 'restore' ? `Do you want to restore "${confirmAction.category?.category_name}" to active status?` :
+          `Are you sure you want to PERMANENTLY delete "${confirmAction.category?.category_name}"? This action cannot be undone and will remove all mappings.`
+        }
+        isLoading={categoryMutation.isPending || deleteCategoryMutation.isPending}
       />
     </div>
   );

@@ -11,11 +11,27 @@ export interface Skill {
   parent_skill?: number;
 }
 
+export interface SkillCategory {
+  id: number;
+  category_name: string;
+  category_code: string;
+  description: string;
+  is_active: boolean;
+}
+
 export interface SkillLevel {
   id: number;
   level_name: string;
   level_rank: number;
   description: string;
+}
+
+export interface SkillCategoryMapping {
+  id: number;
+  category: number;
+  skill: number;
+  skill_name?: string;
+  category_name?: string;
 }
 
 export interface JobRoleSkillRequirement {
@@ -31,6 +47,41 @@ export interface JobRoleSkillRequirement {
  * Base path: /api/v1/skills/
  */
 export const skillApi = {
+  // Skill Categories
+  getSkillCategories: async () => {
+    try {
+      const response = await apiClient.get("/skills/skill-categories/");
+      return handleApiResponse<PaginatedResponse<SkillCategory>>(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+  createSkillCategory: async (data: Partial<SkillCategory>) => {
+    try {
+      const response = await apiClient.post("/skills/skill-categories/", data);
+      return handleApiResponse<SkillCategory>(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+  updateSkillCategory: async (id: number, data: Partial<SkillCategory>) => {
+    try {
+      const response = await apiClient.patch(`/skills/skill-categories/${id}/`, data);
+      return handleApiResponse<SkillCategory>(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+  deleteSkillCategory: async (id: number, softDelete: boolean = true) => {
+    try {
+      const response = await apiClient.delete(`/skills/skill-categories/${id}/?soft_delete=${softDelete}`);
+      return handleApiResponse(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  // Skills
   getSkills: async () => {
     try {
       const response = await apiClient.get("/skills/skills/");
@@ -39,7 +90,32 @@ export const skillApi = {
       return handleApiError(error);
     }
   },
+  createSkill: async (data: Partial<Skill>) => {
+    try {
+      const response = await apiClient.post("/skills/skills/", data);
+      return handleApiResponse<Skill>(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+  updateSkill: async (id: number, data: Partial<Skill>) => {
+    try {
+      const response = await apiClient.patch(`/skills/skills/${id}/`, data);
+      return handleApiResponse<Skill>(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+  deleteSkill: async (id: number, softDelete: boolean = true) => {
+    try {
+      const response = await apiClient.delete(`/skills/skills/${id}/?soft_delete=${softDelete}`);
+      return handleApiResponse(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
 
+  // Skill Levels
   getSkillLevels: async () => {
     try {
       const response = await apiClient.get("/skills/skill-levels/");
@@ -48,7 +124,42 @@ export const skillApi = {
       return handleApiError(error);
     }
   },
+  createSkillLevel: async (data: Partial<SkillLevel>) => {
+    try {
+      const response = await apiClient.post("/skills/skill-levels/", data);
+      return handleApiResponse<SkillLevel>(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
 
+  // Category-Skill Mappings
+  getSkillMappings: async () => {
+    try {
+      const response = await apiClient.get("/skills/skill-mappings/");
+      return handleApiResponse<PaginatedResponse<SkillCategoryMapping>>(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+  createSkillMapping: async (data: { category: number; skill: number }) => {
+    try {
+      const response = await apiClient.post("/skills/skill-mappings/", data);
+      return handleApiResponse<SkillCategoryMapping>(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+  deleteSkillMapping: async (id: number) => {
+    try {
+      const response = await apiClient.delete(`/skills/skill-mappings/${id}/`);
+      return handleApiResponse(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  // Job Role Requirements
   getRoleRequirements: async () => {
     try {
       const response = await apiClient.get("/skills/role-requirements/");

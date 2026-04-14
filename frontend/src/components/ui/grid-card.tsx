@@ -74,6 +74,7 @@ export const GridCard: React.FC<GridCardProps> = ({
   style,
 }) => (
   <div
+    className="grid-card"
     style={{
       background: 'var(--color-bg)',
       border: '1px solid var(--color-border)',

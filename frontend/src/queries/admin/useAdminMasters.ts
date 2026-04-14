@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { adminMockApi } from '@/api/admin-mock-api';
 import { organizationApi } from '@/api/organization-api';
 import { skillApi } from '@/api/skill-api';
+import { courseApi } from '@/api/course-api';
 
 export const ADMIN_QUERY_KEYS = {
   businessUnits: ['admin', 'business-units'],
@@ -74,6 +75,9 @@ export const useJobRoleSkills = () =>
 export const useEmployeeSkills = () =>
   useQuery({ queryKey: ADMIN_QUERY_KEYS.employeeSkills, queryFn: adminMockApi.getEmployeeSkills });
 
-export const useCourseCategories = () =>
-  useQuery({ queryKey: ADMIN_QUERY_KEYS.courseCategories, queryFn: adminMockApi.getCourseCategories });
+export const useCourseCategories = (params?: { page?: number; page_size?: number }) =>
+  useQuery({ 
+    queryKey: [...ADMIN_QUERY_KEYS.courseCategories, params], 
+    queryFn: () => courseApi.getCategories(params) 
+  });
 

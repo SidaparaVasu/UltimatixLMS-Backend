@@ -63,6 +63,30 @@ class JobRoleSkillService(BaseService):
 class EmployeeSkillService(BaseService):
     repository_class = EmployeeSkillRepository
 
+    @transaction.atomic
+    def bulk_sync_skills(self, employee_id, skills):
+        """
+        Synchronizes skills for an employee.
+        Deactivates current skills and reactivates/creates new ones.
+        """
+        # 1. Deactivate all currently active skills for this employee
+        self.repository.filter(employee_id=employee_id, is_active=True).update(is_active=False)
+
+        results = []
+        # 2. Add or Reactivate new ones
+        for item in skills:
+            skill_id = item.get('skill_id')
+            level_id = item.get('level_id')
+
+            obj, created = self.repository.model.objects.update_or_create(
+                employee_id=employee_id,
+                skill_id=skill_id,
+                defaults={'current_level_id': level_id, 'is_active': True}
+            )
+            results.append(obj)
+        
+        return results
+
 
 class EmployeeSkillHistoryService(BaseService):
     repository_class = EmployeeSkillHistoryRepository

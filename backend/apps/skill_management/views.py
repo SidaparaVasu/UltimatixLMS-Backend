@@ -23,8 +23,9 @@ from .serializers import (
     EmployeeSkillSerializer,
     EmployeeSkillHistorySerializer,
     EmployeeSkillAssessmentSerializer,
+    EmployeeSkillBulkSyncSerializer,
     JobRoleSkillBulkSyncSerializer,
-    JobRoleSkillRequirementSerializer
+    JobRoleSkillRequirementSerializer,
 )
 from .services import (
     SkillCategoryService,
@@ -165,6 +166,18 @@ class EmployeeSkillViewSet(BaseSkillViewSet):
     service_class = EmployeeSkillService
     model = EmployeeSkill
     required_permission = "EMPLOYEE_SKILL_MANAGE"
+
+    @action(detail=False, methods=['post'], url_path='bulk-sync')
+    def bulk_sync(self, request):
+        serializer = EmployeeSkillBulkSyncSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        results = self.service_class().bulk_sync_skills(**serializer.validated_data)
+        
+        return success_response(
+            message="Employee skills updated successfully.",
+            data=self.get_serializer(results, many=True).data
+        )
 
 
 class EmployeeSkillHistoryViewSet(BaseSkillViewSet):

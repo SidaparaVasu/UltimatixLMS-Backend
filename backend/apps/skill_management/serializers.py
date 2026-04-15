@@ -98,3 +98,8 @@ class SkillRequirementItemSerializer(serializers.Serializer):
 class JobRoleSkillBulkSyncSerializer(serializers.Serializer):
     job_role_id = serializers.IntegerField()
     requirements = SkillRequirementItemSerializer(many=True)
+
+
+class EmployeeSkillBulkSyncSerializer(serializers.Serializer):
+    employee_id = serializers.IntegerField()
+    skills = SkillRequirementItemSerializer(many=True)

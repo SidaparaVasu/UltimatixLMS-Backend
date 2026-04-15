@@ -27,6 +27,11 @@ from apps.auth_security.constants import AttemptStatus
 # ---------------------------------------------------------------------------
 
 class AuthUserRepository:
+    def get_by_username(self, username: str) -> AuthUser | None:
+        try:
+            return AuthUser.objects.get(username=username.strip())
+        except AuthUser.DoesNotExist:
+            return None
 
     def get_by_email(self, email: str) -> AuthUser | None:
         try:
@@ -57,8 +62,28 @@ class AuthUserRepository:
             email=email, username=username, password=password, **extra_fields
         )
 
+    def exists_email(self, email: str, exclude_user_id: int | None = None) -> bool:
+        queryset = AuthUser.objects.filter(email=email.lower().strip())
+        if exclude_user_id:
+            queryset = queryset.exclude(pk=exclude_user_id)
+        return queryset.exists()
+
+    def exists_username(self, username: str, exclude_user_id: int | None = None) -> bool:
+        queryset = AuthUser.objects.filter(username=username.strip())
+        if exclude_user_id:
+            queryset = queryset.exclude(pk=exclude_user_id)
+        return queryset.exists()
+
     def update_last_login(self, user: AuthUser) -> None:
         AuthUser.objects.filter(pk=user.pk).update(last_login=timezone.now())
+
+    def update(self, user: AuthUser, **fields) -> AuthUser:
+        allowed = {"email", "username", "is_active", "is_staff", "is_superuser"}
+        safe = {k: v for k, v in fields.items() if k in allowed}
+        if safe:
+            AuthUser.objects.filter(pk=user.pk).update(**safe, updated_at=timezone.now())
+            user.refresh_from_db(fields=[*safe.keys(), "updated_at"])
+        return user
 
     def mark_email_verified(self, user: AuthUser) -> None:
         """Mark user's email as verified and stamp the time."""
@@ -87,7 +112,9 @@ class AuthUserProfileRepository:
             "profile_image_url", "date_of_birth", "gender",
         }
         safe = {k: v for k, v in fields.items() if k in allowed}
-        AuthUserProfile.objects.filter(user=user).update(**safe)
+        self.get_or_create(user)
+        if safe:
+            AuthUserProfile.objects.filter(user=user).update(**safe)
         return AuthUserProfile.objects.get(user=user)
 
 

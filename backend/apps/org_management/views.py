@@ -1,5 +1,5 @@
-from rest_framework import viewsets, status, permissions
-from rest_framework.response import Response
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from common.response import success_response, created_response, error_response
 from .models import (
@@ -17,6 +17,9 @@ from .serializers import (
     DepartmentMasterSerializer,
     LocationMasterSerializer,
     JobRoleMasterSerializer,
+    EmployeeDirectorySerializer,
+    EmployeeFullProfileWriteSerializer,
+    EmployeeManagerOptionSerializer,
     EmployeeMasterSerializer,
     EmployeeReportingManagerSerializer
 )
@@ -41,11 +44,23 @@ class BaseOrgViewSet(viewsets.ModelViewSet):
 
     def _get_user_company(self):
         """Helper to get the company associated with the logged-in user."""
-        try:
-            employee = EmployeeMaster.objects.get(user=self.request.user)
-            return employee.company
-        except EmployeeMaster.DoesNotExist:
-            return None
+        employee = EmployeeService().get_by_user(self.request.user)
+        return employee.company if employee else None
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return success_response(data=serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return success_response(data=serializer.data)
 
     def get_queryset(self):
         """
@@ -167,14 +182,102 @@ class JobRoleMasterViewSet(BaseOrgViewSet):
 
 class EmployeeMasterViewSet(BaseOrgViewSet):
     queryset = EmployeeMaster.objects.all()
-    serializer_class = EmployeeMasterSerializer
+    serializer_class = EmployeeDirectorySerializer
     service_class = EmployeeService
     model = EmployeeMaster
 
+    def get_queryset(self):
+        company = self._get_user_company()
+        if not company:
+            return EmployeeMaster.objects.none()
+        return self.service_class().get_directory_queryset(company=company)
+
+    def get_serializer_class(self):
+        if self.action in {"create", "update", "partial_update"}:
+            return EmployeeFullProfileWriteSerializer
+        if self.action == "manager_options":
+            return EmployeeManagerOptionSerializer
+        return EmployeeDirectorySerializer
+
+    def create(self, request, *args, **kwargs):
+        company = self._get_user_company()
+        if not company:
+            return error_response(
+                message="User is not associated with any company. Cannot create record.",
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        employee = self.service_class().create_full_profile(
+            company=company,
+            **serializer.validated_data,
+        )
+        return created_response(
+            message="Employee profile created successfully.",
+            data=EmployeeDirectorySerializer(employee).data,
+        )
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        employee = self.service_class().update_full_profile(
+            employee=instance,
+            **serializer.validated_data,
+        )
+        return success_response(
+            message="Employee profile updated successfully.",
+            data=EmployeeDirectorySerializer(employee).data,
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        employee = self.service_class().update_full_profile(
+            employee=instance,
+            **serializer.validated_data,
+        )
+        return success_response(
+            message="Employee profile partially updated successfully.",
+            data=EmployeeDirectorySerializer(employee).data,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name="soft_delete", type=bool, description="Set to true to deactivate the employee record.")
+        ]
+    )
     def destroy(self, request, *args, **kwargs):
-        return error_response(
-            message="Deletion not allowed for EmployeeMaster records.",
-            status_code=status.HTTP_403_FORBIDDEN
+        instance = self.get_object()
+        soft_delete = request.query_params.get("soft_delete", "true").lower() == "true"
+        self.service_class().delete(pk=instance.pk, soft_delete=soft_delete)
+        return success_response(message="Employee profile deactivated successfully.")
+
+    @action(detail=False, methods=["get"], url_path="manager-options")
+    def manager_options(self, request):
+        company = self._get_user_company()
+        if not company:
+            return success_response(data=[])
+
+        exclude_employee_id = request.query_params.get("exclude_employee_id")
+        try:
+            exclude_employee_id = int(exclude_employee_id) if exclude_employee_id else None
+        except (TypeError, ValueError):
+            return error_response(
+                message="exclude_employee_id must be an integer.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        employees = self.service_class().get_manager_options(
+            company=company,
+            exclude_employee_id=exclude_employee_id,
+        )
+        serializer = self.get_serializer(employees, many=True)
+        return success_response(
+            message="Manager options retrieved successfully.",
+            data=serializer.data,
         )
 
 

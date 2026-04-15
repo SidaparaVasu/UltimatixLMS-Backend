@@ -317,7 +317,7 @@ class EmployeeMasterViewSet(BaseOrgViewSet):
             **serializer.validated_data,
         )
         return success_response(
-            message="Employee profile partially updated successfully.",
+            message="Employee profile updated successfully.",
             data=EmployeeDirectorySerializer(employee).data,
         )
 

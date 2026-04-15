@@ -1,50 +1,16 @@
 import { apiClient } from "./axios-client";
 import { handleApiResponse, handleApiError } from "@/utils/api-utils";
-
-// -----------
-// Interfaces
-// -----------
-
-export interface BusinessUnit {
-  id: number;
-  business_unit_name: string;
-  business_unit_code: string;
-  description: string;
-  is_active: boolean;
-  company?: number;
-}
-
-export interface Location {
-  id: number;
-  location_name: string;
-  location_code: string;
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  postal_code: string;
-  is_active: boolean;
-  company?: number;
-}
-
-export interface Department {
-  id: number;
-  business_unit: number; // Linked BU ID
-  department_name: string;
-  department_code: string;
-  description: string;
-  parent_department: number | null;
-  is_active: boolean;
-}
-
-export interface JobRole {
-  id: number;
-  job_role_name: string;
-  job_role_code: string;
-  description: string;
-  is_active: boolean;
-  company?: number;
-}
+import {
+  BusinessUnit,
+  Location,
+  Department,
+  JobRole,
+  DropdownOption,
+  EmployeeDirectoryRow,
+  EmployeeManagerOptionRow,
+  EmployeeCreatePayload,
+  EmployeeUpdatePayload,
+} from "@/types/org.types";
 
 export interface PaginatedResponse<T> {
   count: number;
@@ -62,7 +28,7 @@ export const organizationApi = {
   getBusinessUnits: async (params?: { page?: number; page_size?: number }) => {
     try {
       const response = await apiClient.get("/org/business-units/", { params });
-      return handleApiResponse<PaginatedResponse<BusinessUnit>>(response.data);
+      return handleApiResponse<PaginatedResponse<BusinessUnit>>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }
@@ -103,7 +69,7 @@ export const organizationApi = {
   getLocations: async (params?: { page?: number; page_size?: number }) => {
     try {
       const response = await apiClient.get("/org/locations/", { params });
-      return handleApiResponse<PaginatedResponse<Location>>(response.data);
+      return handleApiResponse<PaginatedResponse<Location>>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }
@@ -139,7 +105,7 @@ export const organizationApi = {
   getDepartments: async (params?: { page?: number; page_size?: number }) => {
     try {
       const response = await apiClient.get("/org/departments/", { params });
-      return handleApiResponse<PaginatedResponse<Department>>(response.data);
+      return handleApiResponse<PaginatedResponse<Department>>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }
@@ -175,7 +141,7 @@ export const organizationApi = {
   getJobRoles: async (params?: { page?: number; page_size?: number }) => {
     try {
       const response = await apiClient.get("/org/job-roles/", { params });
-      return handleApiResponse<PaginatedResponse<JobRole>>(response.data);
+      return handleApiResponse<PaginatedResponse<JobRole>>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }
@@ -202,6 +168,87 @@ export const organizationApi = {
         `/org/job-roles/${id}/?soft_delete=true`,
       );
       return handleApiResponse(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  getBusinessUnitOptions: async () => {
+    try {
+      const response = await apiClient.get("/org/business-units/options/");
+      return handleApiResponse<DropdownOption[]>(response.data, false);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  getDepartmentOptions: async (params?: { business_unit_id?: number }) => {
+    try {
+      const response = await apiClient.get("/org/departments/options/", { params });
+      return handleApiResponse<DropdownOption[]>(response.data, false);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  getLocationOptions: async () => {
+    try {
+      const response = await apiClient.get("/org/locations/options/");
+      return handleApiResponse<DropdownOption[]>(response.data, false);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  getJobRoleOptions: async () => {
+    try {
+      const response = await apiClient.get("/org/job-roles/options/");
+      return handleApiResponse<DropdownOption[]>(response.data, false);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  getEmployees: async (params?: { page?: number; page_size?: number }) => {
+    try {
+      const response = await apiClient.get("/org/employees/", { params });
+      return handleApiResponse<PaginatedResponse<EmployeeDirectoryRow>>(response.data, false);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  createEmployee: async (data: EmployeeCreatePayload, notify: boolean = true) => {
+    try {
+      const response = await apiClient.post("/org/employees/", data);
+      return handleApiResponse<EmployeeDirectoryRow>(response.data, notify);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  updateEmployee: async (id: number, data: EmployeeUpdatePayload, notify: boolean = true) => {
+    try {
+      const response = await apiClient.patch(`/org/employees/${id}/`, data);
+      return handleApiResponse<EmployeeDirectoryRow>(response.data, notify);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  deleteEmployee: async (id: number, softDelete: boolean = true, notify: boolean = true) => {
+    try {
+      const response = await apiClient.delete(`/org/employees/${id}/?soft_delete=${softDelete}`);
+      return handleApiResponse(response.data, notify);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  getEmployeeManagerOptions: async (params?: { exclude_employee_id?: number }) => {
+    try {
+      const response = await apiClient.get("/org/employees/manager-options/", { params });
+      return handleApiResponse<EmployeeManagerOptionRow[]>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }

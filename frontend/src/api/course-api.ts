@@ -12,7 +12,7 @@ export const courseApi = {
   getCategories: async (params?: any) => {
     try {
       const response = await apiClient.get("/courses/categories/", { params });
-      return handleApiResponse<PaginatedResponse<CourseCategory>>(response.data);
+      return handleApiResponse<PaginatedResponse<CourseCategory>>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }

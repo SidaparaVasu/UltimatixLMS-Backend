@@ -18,7 +18,7 @@ export const skillApi = {
   getSkillCategories: async () => {
     try {
       const response = await apiClient.get("/skills/skill-categories/");
-      return handleApiResponse<PaginatedResponse<SkillCategory>>(response.data);
+      return handleApiResponse<PaginatedResponse<SkillCategory>>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }
@@ -52,7 +52,7 @@ export const skillApi = {
   getSkills: async () => {
     try {
       const response = await apiClient.get("/skills/skills/");
-      return handleApiResponse<PaginatedResponse<Skill>>(response.data);
+      return handleApiResponse<PaginatedResponse<Skill>>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }
@@ -86,7 +86,7 @@ export const skillApi = {
   getSkillLevels: async () => {
     try {
       const response = await apiClient.get("/skills/skill-levels/");
-      return handleApiResponse<PaginatedResponse<SkillLevel>>(response.data);
+      return handleApiResponse<PaginatedResponse<SkillLevel>>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }
@@ -104,7 +104,7 @@ export const skillApi = {
   getSkillMappings: async () => {
     try {
       const response = await apiClient.get("/skills/skill-mappings/");
-      return handleApiResponse<PaginatedResponse<SkillCategoryMapping>>(response.data);
+      return handleApiResponse<PaginatedResponse<SkillCategoryMapping>>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }
@@ -130,7 +130,7 @@ export const skillApi = {
   getRoleRequirements: async () => {
     try {
       const response = await apiClient.get("/skills/role-requirements/");
-      return handleApiResponse<PaginatedResponse<JobRoleSkillRequirement>>(response.data);
+      return handleApiResponse<PaginatedResponse<JobRoleSkillRequirement>>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }

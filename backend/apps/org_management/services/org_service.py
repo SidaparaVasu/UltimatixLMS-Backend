@@ -227,6 +227,7 @@ class EmployeeService(BaseService):
             location=location,
             manager=manager,
             employee=employee,
+            manager_supplied=manager_supplied,
         )
 
         user = employee.user
@@ -350,6 +351,7 @@ class EmployeeService(BaseService):
         location,
         manager=None,
         employee=None,
+        manager_supplied=True,
     ):
         if business_unit.company_id != company.id:
             raise ValidationException(errors={"business_unit": ["Business unit does not belong to your company."]})
@@ -380,17 +382,23 @@ class EmployeeService(BaseService):
                 raise ValidationException(errors={"manager": ["Reporting manager must have an active user account."]})
             if manager.employment_status != EmploymentStatus.ACTIVE:
                 raise ValidationException(errors={"manager": ["Reporting manager must be an active employee."]})
-            if employee:
+            if employee and manager_supplied:
                 self._ensure_no_cycle(employee=employee, manager=manager)
 
     def _ensure_no_cycle(self, employee, manager):
+        # If the manager being assigned is the same as the employee's current manager,
+        # skip cycle validation since the manager hasn't actually changed
+        current_manager = self.reporting_repo.get_direct_manager(employee)
+        if current_manager is not None and manager.pk == current_manager.pk:
+            return
+        
         visited = set()
         current = manager
         while current:
             if current.pk == employee.pk:
-                raise ValidationException(errors={"manager": ["Manager assignment would create a reporting cycle."]})
+                raise ValidationException(errors={"manager": ["Cannot assign a subordinate as a reporting manager (would create a cycle)."]})
             if current.pk in visited:
-                raise ValidationException(errors={"manager": ["Reporting structure contains a cycle."]})
+                raise ValidationException(errors={"manager": ["Cannot assign this manager (reporting structure would create a cycle)."]})
             visited.add(current.pk)
             current = self.reporting_repo.get_direct_manager(current)
 

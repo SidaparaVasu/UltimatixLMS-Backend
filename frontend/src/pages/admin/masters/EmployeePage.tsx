@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNotificationStore } from '@/stores/notificationStore';
 import {
   ChevronRight,
   ChevronLeft,
@@ -9,15 +11,26 @@ import {
 } from "lucide-react";
 import {
   useEmployees,
-  useDepartments,
-  useJobRoles,
-  useBusinessUnits,
-  useLocations,
   useSkills,
   useSkillLevels,
   useEmployeeSkills,
+  useEmployeeManagerOptions,
+  useBusinessUnitOptions,
+  useDepartmentOptions,
+  useLocationOptions,
+  useJobRoleOptions,
+  ADMIN_QUERY_KEYS,
 } from "@/queries/admin/useAdminMasters";
-import { Employee } from "@/api/admin-mock-api";
+import {
+  organizationApi,
+} from "@/api/organization-api";
+import {
+  Employee,
+  EmployeeCreatePayload,
+  EmployeeDirectoryRow,
+  EmployeeUpdatePayload,
+  DropdownOption,
+} from "@/types/org.types";
 import { AdminMasterLayout } from "@/components/admin/layout/AdminMasterLayout";
 import {
   AdminDataTable,
@@ -131,19 +144,45 @@ const TwoColGrid: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </div>
 );
 
+const normalizeEmployeeRow = (row: EmployeeDirectoryRow): Employee => ({
+  id: row.id,
+  user: row.user,
+  username: row.username,
+  email: row.email,
+  firstName: row.first_name || "",
+  lastName: row.last_name || "",
+  fullName: row.full_name || `${row.first_name || ""} ${row.last_name || ""}`.trim(),
+  mobile_no: row.phone_number || "",
+  profile_image: row.profile_image_url || "",
+  date_of_birth: row.date_of_birth || "",
+  gender: row.gender || "",
+  employeeCode: row.employee_code,
+  company: row.company_name || "Ultimatix Global",
+  companyName: row.company_name || "Ultimatix Global",
+  businessUnitId: row.business_unit != null ? String(row.business_unit) : "",
+  businessUnitName: row.business_unit_name || "",
+  departmentId: row.department != null ? String(row.department) : "",
+  departmentName: row.department_name || "",
+  roleId: row.job_role != null ? String(row.job_role) : "",
+  jobRoleName: row.job_role_name || "",
+  locationId: row.location != null ? String(row.location) : "",
+  locationName: row.location_name || "",
+  managerId: row.manager != null ? String(row.manager) : "",
+  managerName: row.manager_name || "",
+  joiningDate: row.joining_date || "",
+  isActive: row.is_active,
+  employmentStatus: row.employment_status || "",
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+const toOptions = (items?: DropdownOption[]) =>
+  (items ?? []).map((item) => ({ label: item.name, value: String(item.id) }));
+
 /* ─────────────────────────────────────────────────────────────
    MAIN PAGE
 ───────────────────────────────────────────────────────────── */
 const EmployeePage: React.FC = () => {
-  const { data: employees, isLoading, error } = useEmployees();
-  const { data: departments } = useDepartments();
-  const { data: jobRoles } = useJobRoles();
-  const { data: businessUnits } = useBusinessUnits();
-  const { data: locations } = useLocations();
-  const { data: allSkills = [] } = useSkills();
-  const { data: allLevels = [] } = useSkillLevels();
-  const { data: empSkills = [] } = useEmployeeSkills();
-  
   /* ── Mapping state ── */
   const [mappingEmp, setMappingEmp] = useState<Employee | null>(null);
   const [isMappingOpen, setIsMappingOpen] = useState(false);
@@ -163,24 +202,87 @@ const EmployeePage: React.FC = () => {
   const [viewingEmp, setViewingEmp] = useState<Employee | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<EmpForm>({ ...EMPTY_FORM });
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const queryClient = useQueryClient();
+
+  const { data: employeesRes, isLoading, error } = useEmployees({ page, page_size: pageSize });
+  const { data: businessUnitOptions } = useBusinessUnitOptions();
+  const { data: departmentOptions } = useDepartmentOptions(
+    formData.businessUnitId ? { businessUnitId: Number(formData.businessUnitId) } : undefined,
+  );
+  const { data: locationOptions } = useLocationOptions();
+  const { data: jobRoleOptions } = useJobRoleOptions();
+  const { data: skillsRes } = useSkills();
+  const { data: levelsRes } = useSkillLevels();
+  const { data: empSkills = [] } = useEmployeeSkills();
+  const { data: managerOptions = [] } = useEmployeeManagerOptions(
+    editingEmp ? { excludeEmployeeId: editingEmp.id } : undefined,
+  );
+
+  const employees = (employeesRes?.results ?? []).map(normalizeEmployeeRow);
+  const allSkills = skillsRes?.results ?? [];
+  const allLevels = levelsRes?.results ?? [];
+  const skills = allSkills;
+  const levels = allLevels;
+
+  const businessUnitSelectOptions = toOptions(businessUnitOptions);
+  const departmentSelectOptions = toOptions(departmentOptions);
+  const locationSelectOptions = toOptions(locationOptions);
+  const jobRoleSelectOptions = toOptions(jobRoleOptions);
+  const managerSelectOptions = managerOptions.map((opt) => ({
+    label: opt.full_name,
+    value: String(opt.id),
+  }));
 
   /* ── Helpers ── */
   const setField = <K extends keyof EmpForm>(k: K, v: EmpForm[K]) =>
     setFormData((prev) => ({ ...prev, [k]: v }));
 
-  const getDeptName = (id: string) =>
-    departments?.find((d) => d.id === id)?.name || "-";
-  const getRoleName = (id: string) =>
-    jobRoles?.find((r) => r.id === id)?.name || "-";
-  const getBuName = (id: string) =>
-    businessUnits?.find((b) => b.id === id)?.name || "-";
-  const getLocName = (id: string) =>
-    locations?.find((l) => l.id === id)?.name || "-";
-  const getManagerName = (id: string | null) => {
-    if (!id) return "-";
-    const m = employees?.find((e) => e.id === id);
-    return m ? `${m.firstName} ${m.lastName}` : "-";
+  const parseId = (value: string) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
   };
+
+  const buildEmployeePayload = (includePassword: boolean): EmployeeCreatePayload => {
+    const payload: EmployeeCreatePayload = {
+      username: formData.username.trim(),
+      email: formData.email.trim(),
+      first_name: formData.firstName.trim(),
+      last_name: formData.lastName.trim(),
+      phone_number: formData.mobile_no.trim() || undefined,
+      date_of_birth: formData.date_of_birth || undefined,
+      gender: formData.gender || undefined,
+      employee_code: formData.employeeCode.trim(),
+      business_unit: parseId(formData.businessUnitId),
+      department: parseId(formData.departmentId),
+      job_role: parseId(formData.roleId),
+      location: parseId(formData.locationId),
+      manager: formData.managerId ? parseId(formData.managerId) ?? null : null,
+      joining_date: formData.joiningDate || undefined,
+      is_active: formData.isActive,
+    };
+
+    if (includePassword && formData.password.trim()) {
+      payload.password = formData.password.trim();
+    }
+
+    return payload;
+  };
+
+  const buildCreatePayload = (): EmployeeCreatePayload =>
+    buildEmployeePayload(true);
+
+  const buildUpdatePayload = (): EmployeeUpdatePayload => {
+    const payload = buildEmployeePayload(false);
+    if (formData.password.trim()) {
+      payload.password = formData.password.trim();
+    }
+    return payload;
+  };
+
+  const getManagerLabel = (managerName: string, email: string) =>
+    managerName ? `${managerName} ${email ? `(${email})` : ""}`.trim() : "-";
 
   /* ── Validation ── */
   const isStep1Valid = !!(
@@ -200,6 +302,52 @@ const EmployeePage: React.FC = () => {
   );
   const isAllValid = isStep1Valid && isStep2Valid;
 
+  const createMutation = useMutation({
+    mutationFn: (payload: EmployeeCreatePayload) =>
+      organizationApi.createEmployee(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.employees });
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.employeeManagerOptions });
+      closeDialog();
+    },
+    onError: (error: any) => {
+      const managerError = error.response?.data?.errors?.manager?.[0];
+      if (managerError) {
+        showNotification(managerError, 'error');
+      }
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: EmployeeUpdatePayload }) =>
+      organizationApi.updateEmployee(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.employees });
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.employeeManagerOptions });
+      closeDialog();
+    },
+    onError: (error: any) => {
+      const managerError = error.response?.data?.errors?.manager?.[0];
+      if (managerError) {
+        showNotification(managerError, 'error');
+      }
+    },
+  });
+
+  const showNotification = useNotificationStore((state) => state.showNotification);
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+      organizationApi.updateEmployee(id, { is_active: isActive }, false),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.employees });
+      const message = variables.isActive
+        ? 'Employee profile activated successfully.'
+        : 'Employee profile deactivated successfully.';
+      showNotification(message, 'success');
+    },
+  });
+
   /* ── Dialog open/close ── */
   const openDialog = (emp?: Employee) => {
     setCurrentStep(1);
@@ -216,7 +364,7 @@ const EmployeePage: React.FC = () => {
         date_of_birth: emp.date_of_birth || "",
         gender: emp.gender || "",
         employeeCode: emp.employeeCode,
-        company: "Ultimatix Global",
+        company: emp.companyName || "Ultimatix Global",
         businessUnitId: emp.businessUnitId || "",
         departmentId: emp.departmentId,
         roleId: emp.roleId,
@@ -242,8 +390,15 @@ const EmployeePage: React.FC = () => {
   };
 
   const handleSave = () => {
-    console.log(editingEmp ? "Update:" : "Create:", formData);
-    closeDialog();
+    if (editingEmp) {
+      updateMutation.mutate({ id: editingEmp.id, payload: buildUpdatePayload() });
+    } else {
+      createMutation.mutate(buildCreatePayload());
+    }
+  };
+
+  const handleToggleEmployeeStatus = (emp: Employee) => {
+    toggleActiveMutation.mutate({ id: emp.id, isActive: !emp.isActive });
   };
 
   /* ── Mapping logic ── */
@@ -294,13 +449,18 @@ const EmployeePage: React.FC = () => {
   });
 
   const activeFilters = Object.entries(filters).filter(([, v]) => v !== "all");
+  const lookupLabel = (
+    options: { label: string; value: string }[],
+    value: string,
+  ) => options.find((option) => option.value === value)?.label || "-";
+
   const getFilterLabel = (key: string, val: string) => {
     const map: Record<string, (v: string) => string> = {
       status: (v) => (v === "active" ? "Active" : "Inactive"),
-      department: getDeptName,
-      role: getRoleName,
-      businessUnit: getBuName,
-      location: getLocName,
+      department: (v) => lookupLabel(departmentSelectOptions, v),
+      role: (v) => lookupLabel(jobRoleSelectOptions, v),
+      businessUnit: (v) => lookupLabel(businessUnitSelectOptions, v),
+      location: (v) => lookupLabel(locationSelectOptions, v),
     };
     return map[key]?.(val) ?? val;
   };
@@ -310,7 +470,7 @@ const EmployeePage: React.FC = () => {
     { type: "id", key: "employeeCode", header: "Emp Code", width: "120px" },
     {
       type: "profile",
-      key: "firstName",
+      key: "fullName",
       header: "Employee",
       subKey: "email",
       cellStyle: { fontWeight: 600, color: "var(--color-text-primary)" },
@@ -319,7 +479,7 @@ const EmployeePage: React.FC = () => {
       type: "custom",
       header: "Designation",
       render: (emp) => (
-        <span style={{ fontSize: "13px" }}>{getRoleName(emp.roleId)}</span>
+        <span style={{ fontSize: "13px" }}>{emp.jobRoleName || "-"}</span>
       ),
     },
     {
@@ -327,7 +487,7 @@ const EmployeePage: React.FC = () => {
       header: "Department",
       render: (emp) => (
         <span style={{ fontSize: "13px" }}>
-          {getDeptName(emp.departmentId)}
+          {emp.departmentName || "-"}
         </span>
       ),
     },
@@ -336,7 +496,7 @@ const EmployeePage: React.FC = () => {
       header: "Manager",
       render: (emp) => (
         <span style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>
-          {getManagerName(emp.managerId)}
+          {emp.managerName || "-"}
         </span>
       ),
     },
@@ -349,6 +509,8 @@ const EmployeePage: React.FC = () => {
       },
       onEdit: openDialog,
       onMap: handleOpenMapping,
+      onToggle: handleToggleEmployeeStatus,
+      getIsActive: (emp) => emp.isActive,
     },
   ];
 
@@ -505,9 +667,9 @@ const EmployeePage: React.FC = () => {
             style={{ width: "120px", cursor: "pointer", flexShrink: 0 }}
           >
             <option value="all">BU: All</option>
-            {businessUnits?.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
+            {businessUnitSelectOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -520,9 +682,9 @@ const EmployeePage: React.FC = () => {
             style={{ width: "120px", cursor: "pointer", flexShrink: 0 }}
           >
             <option value="all">Loc: All</option>
-            {locations?.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
+            {locationSelectOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -535,9 +697,9 @@ const EmployeePage: React.FC = () => {
             style={{ width: "120px", cursor: "pointer", flexShrink: 0 }}
           >
             <option value="all">Dept: All</option>
-            {departments?.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
+            {departmentSelectOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -550,9 +712,9 @@ const EmployeePage: React.FC = () => {
             style={{ width: "120px", cursor: "pointer", flexShrink: 0 }}
           >
             <option value="all">Role: All</option>
-            {jobRoles?.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
+            {jobRoleSelectOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -800,42 +962,32 @@ const EmployeePage: React.FC = () => {
                   label="Business Unit"
                   required
                   value={formData.businessUnitId}
-                  onChange={(v) => setField("businessUnitId", v)}
-                  options={
-                    businessUnits?.map((b) => ({
-                      label: b.name,
-                      value: b.id,
-                    })) || []
-                  }
+                  onChange={(v) => {
+                    setField("businessUnitId", v);
+                    setField("departmentId", "");
+                  }}
+                  options={businessUnitSelectOptions}
                 />
                 <AdminSelect
                   label="Department"
                   required
                   value={formData.departmentId}
                   onChange={(v) => setField("departmentId", v)}
-                  options={
-                    departments?.map((d) => ({ label: d.name, value: d.id })) ||
-                    []
-                  }
+                  options={departmentSelectOptions}
                 />
                 <AdminSelect
                   label="Unit Location"
                   required
                   value={formData.locationId}
                   onChange={(v) => setField("locationId", v)}
-                  options={
-                    locations?.map((l) => ({ label: l.name, value: l.id })) ||
-                    []
-                  }
+                  options={locationSelectOptions}
                 />
                 <AdminSelect
                   label="Job Role / Designation"
                   required
                   value={formData.roleId}
                   onChange={(v) => setField("roleId", v)}
-                  options={
-                    jobRoles?.map((r) => ({ label: r.name, value: r.id })) || []
-                  }
+                  options={jobRoleSelectOptions}
                 />
                 <AdminInput
                   label="Joining Date"
@@ -868,14 +1020,7 @@ const EmployeePage: React.FC = () => {
                 value={formData.managerId}
                 onChange={(v) => setField("managerId", v)}
                 placeholder="No Line Manager (Root Node)"
-                options={
-                  employees
-                    ?.filter((e) => e.id !== editingEmp?.id)
-                    .map((e) => ({
-                      label: `${e.firstName} ${e.lastName} [${e.employeeCode}]`,
-                      value: e.id,
-                    })) || []
-                }
+                options={managerSelectOptions}
               />
               <AdminToggle
                 label="Account Access Status"
@@ -999,26 +1144,26 @@ const EmployeePage: React.FC = () => {
                     label="Emp Code"
                     value={viewingEmp.employeeCode}
                   />
-                  <DetailField label="Company" value="Ultimatix Global" />
+                  <DetailField label="Company" value={viewingEmp.companyName || "Ultimatix Global"} />
                   <DetailField
                     label="Business Unit"
-                    value={getBuName(viewingEmp.businessUnitId)}
+                    value={viewingEmp.businessUnitName}
                   />
                   <DetailField
                     label="Location"
-                    value={getLocName(viewingEmp.locationId)}
+                    value={viewingEmp.locationName}
                   />
                   <DetailField
                     label="Department"
-                    value={getDeptName(viewingEmp.departmentId)}
+                    value={viewingEmp.departmentName}
                   />
                   <DetailField
                     label="Designation"
-                    value={getRoleName(viewingEmp.roleId)}
+                    value={viewingEmp.jobRoleName}
                   />
                   <DetailField
                     label="Joining Date"
-                    value={(viewingEmp as any).joiningDate}
+                    value={viewingEmp.joiningDate}
                   />
                 </TwoColGrid>
               </div>
@@ -1028,7 +1173,7 @@ const EmployeePage: React.FC = () => {
                 <TwoColGrid>
                   <DetailField
                     label="Reporting Manager"
-                    value={getManagerName(viewingEmp.managerId)}
+                    value={viewingEmp.managerName || "-"}
                   />
                 </TwoColGrid>
               </div>
@@ -1036,7 +1181,7 @@ const EmployeePage: React.FC = () => {
               <div>
                 <SectionHeader title="Competency Profile" />
                 {empSkills.filter(es => es.employeeId === viewingEmp.id).length === 0 ? (
-                  <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', italic: 'true' } as any}>
+                  <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
                     No skill assessments recorded.
                   </p>
                 ) : (
@@ -1044,8 +1189,8 @@ const EmployeePage: React.FC = () => {
                     {empSkills
                       .filter(es => es.employeeId === viewingEmp.id)
                       .map(es => {
-                        const skill = allSkills.find(s => s.id === es.skillId);
-                        const level = allLevels.find(l => l.id === es.assessedLevelId);
+                        const skill = skills.find(s => s.id === es.skillId);
+                        const level = levels.find(l => l.id === es.assessedLevelId);
                         if (!skill) return null;
                         return (
                           <div 
@@ -1060,12 +1205,12 @@ const EmployeePage: React.FC = () => {
                               border: '1px solid var(--color-border)'
                             }}
                           >
-                            <span style={{ fontSize: '13px', fontWeight: 500 }}>{skill.name}</span>
+                            <span style={{ fontSize: '13px', fontWeight: 500 }}>{skill.skill_name}</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                               <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
                                 {es.status === 'VERIFIED' ? '✓ Verified' : 'Pending'}
                               </span>
-                              <ProficiencyBadge level={level?.name || 'Not Rated'} rank={level?.rank || 0} />
+                              <ProficiencyBadge level={level?.level_name || 'Not Rated'} rank={level?.level_rank || 0} />
                             </div>
                           </div>
                         );

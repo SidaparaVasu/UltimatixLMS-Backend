@@ -6,10 +6,15 @@ import { courseApi } from '@/api/course-api';
 
 export const ADMIN_QUERY_KEYS = {
   businessUnits: ['admin', 'business-units'],
+  businessUnitOptions: ['admin', 'business-unit-options'],
   departments: ['admin', 'departments'],
+  departmentOptions: ['admin', 'department-options'],
   locations: ['admin', 'locations'],
+  locationOptions: ['admin', 'location-options'],
   jobRoles: ['admin', 'job-roles'],
+  jobRoleOptions: ['admin', 'job-role-options'],
   employees: ['admin', 'employees'],
+  employeeManagerOptions: ['admin', 'employee-manager-options'],
 
   skillCategories: ['admin', 'skill-categories'],
   skills: ['admin', 'skills'],
@@ -48,10 +53,47 @@ export const useJobRoles = (params?: { page?: number; page_size?: number }) => {
   });
 };
 
-export const useEmployees = () => {
+export const useEmployees = (params?: { page?: number; page_size?: number }) => {
   return useQuery({
-    queryKey: ADMIN_QUERY_KEYS.employees,
-    queryFn: adminMockApi.getEmployees,
+    queryKey: [...ADMIN_QUERY_KEYS.employees, params],
+    queryFn: () => organizationApi.getEmployees(params),
+  });
+};
+
+export const useEmployeeManagerOptions = (params?: { excludeEmployeeId?: number }) => {
+  const queryParams = params?.excludeEmployeeId ? { exclude_employee_id: params.excludeEmployeeId } : undefined;
+  return useQuery({
+    queryKey: [...ADMIN_QUERY_KEYS.employeeManagerOptions, params],
+    queryFn: () => organizationApi.getEmployeeManagerOptions(queryParams),
+  });
+};
+
+export const useBusinessUnitOptions = () => {
+  return useQuery({
+    queryKey: ADMIN_QUERY_KEYS.businessUnitOptions,
+    queryFn: organizationApi.getBusinessUnitOptions,
+  });
+};
+
+export const useDepartmentOptions = (params?: { businessUnitId?: number }) => {
+  const queryParams = params?.businessUnitId ? { business_unit_id: params.businessUnitId } : undefined;
+  return useQuery({
+    queryKey: [...ADMIN_QUERY_KEYS.departmentOptions, params],
+    queryFn: () => organizationApi.getDepartmentOptions(queryParams),
+  });
+};
+
+export const useLocationOptions = () => {
+  return useQuery({
+    queryKey: ADMIN_QUERY_KEYS.locationOptions,
+    queryFn: organizationApi.getLocationOptions,
+  });
+};
+
+export const useJobRoleOptions = () => {
+  return useQuery({
+    queryKey: ADMIN_QUERY_KEYS.jobRoleOptions,
+    queryFn: organizationApi.getJobRoleOptions,
   });
 };
 

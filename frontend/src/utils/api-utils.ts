@@ -11,17 +11,19 @@ interface ApiResponse<T = any> {
  * Handles standardized backend responses and triggers global toasts.
  * Returns the data payload if successful, or null if failed.
  */
-export const handleApiResponse = <T>(response: ApiResponse<T>): T | null => {
+export const handleApiResponse = <T>(response: ApiResponse<T>, notify: boolean = true): T | null => {
   const { showNotification } = useNotificationStore.getState();
 
   if (response.success) {
-    if (response.message) {
+    if (notify && response.message) {
       showNotification(response.message, 'success');
     }
     return response.data ?? (true as unknown as T);
   } else {
     const errorMsg = response.message || 'An unexpected error occurred.';
-    showNotification(errorMsg, 'error');
+    if (notify) {
+      showNotification(errorMsg, 'error');
+    }
     
     // Log detailed validation errors if present
     if (response.errors) {

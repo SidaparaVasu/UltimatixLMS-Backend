@@ -22,6 +22,7 @@ export const ADMIN_QUERY_KEYS = {
   jobRoleSkills: ['admin', 'job-role-skills'],
   employeeSkills: ['admin', 'employee-skills'],
   courseCategories: ['admin', 'course-categories'],
+  courses: ['admin', 'courses'],
 };
 
 export const useBusinessUnits = (params?: { page?: number; page_size?: number }) => {
@@ -139,5 +140,11 @@ export const useCourseCategories = (params?: { page?: number; page_size?: number
   useQuery({ 
     queryKey: [...ADMIN_QUERY_KEYS.courseCategories, params], 
     queryFn: () => courseApi.getCategories(params) 
+  });
+
+export const useCourses = (params?: { page?: number; page_size?: number; category?: number; is_active?: boolean }) =>
+  useQuery({ 
+    queryKey: [...ADMIN_QUERY_KEYS.courses, params], 
+    queryFn: () => courseApi.getCourses(params) 
   });
 

@@ -1,0 +1,105 @@
+import { useState, useEffect } from 'react';
+import { CourseMaster, CourseSection, CourseLesson } from '@/types/courses.types';
+import { CurriculumNode } from '@/components/admin/builder/CurriculumTree';
+
+export const useCurriculumDraft = (initialCourse?: any) => {
+  const [nodes, setNodes] = useState<CurriculumNode[]>([]);
+  
+  // Initialize draft from backend response
+  useEffect(() => {
+    if (initialCourse && initialCourse.sections) {
+      const mappedNodes: CurriculumNode[] = initialCourse.sections.map((sec: CourseSection) => ({
+        id: `section-${sec.id}`,
+        dbId: sec.id,
+        type: 'SECTION',
+        title: sec.section_title || 'Untitled Section',
+        children: (sec.lessons || []).map((les: CourseLesson) => ({
+          id: `lesson-${les.id}`,
+          dbId: les.id,
+          type: 'LESSON',
+          title: les.lesson_title || 'Untitled Lesson',
+          contentType: les.contents && les.contents.length > 0 ? les.contents[0].content_type : undefined,
+          // content_url etc can be added
+        }))
+      }));
+      setNodes(mappedNodes);
+    }
+  }, [initialCourse]);
+
+  const addSection = (title: string, dbId?: number) => {
+    const newId = dbId ? `section-${dbId}` : `new-sec-${Date.now()}`;
+    const newNode: CurriculumNode = {
+      id: newId,
+      title,
+      type: 'SECTION',
+      children: [],
+    };
+    setNodes(prev => [...prev, newNode]);
+    return newNode;
+  };
+
+  const addLesson = (sectionId: string, title: string, contentType: any, dbId?: number) => {
+    const newId = dbId ? `lesson-${dbId}` : `new-les-${Date.now()}`;
+    
+    setNodes(prev => prev.map(sec => {
+      if (sec.id === sectionId) {
+        return {
+          ...sec,
+          children: [...(sec.children || []), {
+            id: newId,
+            type: 'LESSON',
+            title,
+            contentType,
+          }]
+        };
+      }
+      return sec;
+    }));
+  };
+
+  const removeNode = (id: string, type: 'SECTION' | 'LESSON', parentId?: string) => {
+    if (type === 'SECTION') {
+      setNodes(prev => prev.filter(n => n.id !== id));
+    } else if (parentId) {
+      setNodes(prev => prev.map(sec => {
+        if (sec.id === parentId) {
+          return {
+            ...sec,
+            children: (sec.children || []).filter(c => c.id !== id)
+          };
+        }
+        return sec;
+      }));
+    }
+  };
+  
+  const updateNodeTitle = (id: string, type: 'SECTION' | 'LESSON', title: string, parentId?: string) => {
+      if (type === 'SECTION') {
+        setNodes(prev => prev.map(n => n.id === id ? { ...n, title } : n));
+      } else if (parentId) {
+        setNodes(prev => prev.map(sec => {
+          if (sec.id === parentId) {
+            return {
+              ...sec,
+              children: (sec.children || []).map(c => c.id === id ? { ...c, title } : c)
+            };
+          }
+          return sec;
+        }));
+      }
+  }
+
+  // Expects the entire new tree after a drag/drop reorder
+  const updateTree = (newTree: CurriculumNode[]) => {
+    setNodes(newTree);
+  };
+
+  return {
+    nodes,
+    addSection,
+    addLesson,
+    removeNode,
+    updateNodeTitle,
+    updateTree,
+  };
+};

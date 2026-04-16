@@ -42,6 +42,7 @@ export interface CurriculumNode {
   contentType?: ContentType;
   children?: CurriculumNode[];
   isExpanded?: boolean;
+  videoUrl?: string;
 }
 
 interface CurriculumTreeProps {

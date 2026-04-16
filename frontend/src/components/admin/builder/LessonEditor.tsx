@@ -3,6 +3,7 @@ import { Save, FileText, Video, Link as LinkIcon, UploadCloud, LayoutList, Monit
 import { CurriculumNode, ContentType } from './CurriculumTree';
 import { cn } from '@/utils/cn';
 import { QuizBuilder } from './QuizBuilder';
+import { getVideoInfo, fetchVideoTitle } from '@/utils/video-utils';
 
 interface LessonEditorProps {
   node: CurriculumNode;
@@ -12,10 +13,24 @@ interface LessonEditorProps {
 export const LessonEditor: React.FC<LessonEditorProps> = ({ node, onSave }) => {
   const [title, setTitle] = useState(node.title);
   const [contentType, setContentType] = useState<ContentType>(node.contentType || 'VIDEO');
+  const [videoUrl, setVideoUrl] = useState(node.videoUrl || '');
+  const [isFetchingMetadata, setIsFetchingMetadata] = useState(false);
+  const videoInfo = getVideoInfo(videoUrl);
+
+  const fetchVideoMetadata = async (url: string) => {
+    if (!url || !videoInfo) return;
+    setIsFetchingMetadata(true);
+    const fetchedTitle = await fetchVideoTitle(url);
+    if (fetchedTitle && (!title || title === "New Lesson" || title === "Untitled Lesson")) {
+      setTitle(fetchedTitle);
+    }
+    setIsFetchingMetadata(false);
+  };
 
   useEffect(() => {
     setTitle(node.title);
     setContentType(node.contentType || 'VIDEO');
+    setVideoUrl(node.videoUrl || '');
   }, [node]);
 
   const handleSave = () => {
@@ -112,17 +127,54 @@ export const LessonEditor: React.FC<LessonEditorProps> = ({ node, onSave }) => {
           
           {contentType === 'VIDEO' && (
             <div className="space-y-4">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest block">Video Source URL</label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest block">Video Source URL</label>
+                {videoUrl && videoInfo && (
+                  <button 
+                    onClick={() => fetchVideoMetadata(videoUrl)}
+                    disabled={isFetchingMetadata}
+                    className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors uppercase"
+                  >
+                    {isFetchingMetadata ? 'Fetching...' : 'Auto-fill Title'}
+                  </button>
+                )}
+              </div>
               <input 
                 type="url" 
+                value={videoUrl}
+                onChange={e => {
+                  setVideoUrl(e.target.value);
+                  // TODO: trigger auto-fetch if title is empty
+                }}
                 placeholder="https://www.youtube.com/watch?v=..." 
                 className="w-full px-4 py-3 bg-[#0a0c10] border border-slate-700 rounded-md text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-medium text-sm"
               />
-              <div className="h-48 rounded-lg bg-[#0a0c10] border border-slate-800 flex items-center justify-center text-slate-500">
-                 <div className="text-center">
-                    <Video size={32} className="mx-auto mb-2 opacity-50" />
-                    <p className="text-xs">Video extraction preview will appear here</p>
-                 </div>
+              
+              <div className="relative aspect-video rounded-lg bg-[#0a0c10] border border-slate-800 flex items-center justify-center text-slate-500 overflow-hidden group">
+                 {videoInfo ? (
+                   videoInfo.type === 'youtube' ? (
+                     <iframe 
+                        src={`https://www.youtube.com/embed/${videoInfo.id}`}
+                        className="absolute inset-0 w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                     />
+                   ) : (
+                    <iframe 
+                      src={`https://player.vimeo.com/video/${videoInfo.id}`}
+                      className="absolute inset-0 w-full h-full"
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                    />
+                   )
+                 ) : (
+                   <div className="text-center">
+                      <Video size={32} className="mx-auto mb-2 opacity-50 transition-transform group-hover:scale-110 duration-500" />
+                      <p className="text-xs">
+                        {videoUrl ? 'Invalid URL or unsupported provider' : 'Paste a video link to see preview'}
+                      </p>
+                   </div>
+                 )}
               </div>
             </div>
           )}

@@ -54,6 +54,7 @@ export const AdminSidebar = () => {
       title: "Course Management",
       items: [
         { label: "Course Categories", icon: BookOpen, path: "/admin/course-categories", badge: null },
+        { label: "Courses", icon: BookOpen, path: "/admin/courses", badge: null },
       ]
     },
     {

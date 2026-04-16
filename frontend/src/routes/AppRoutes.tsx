@@ -25,6 +25,8 @@ const JobRolePage = lazy(() => import('@/pages/admin/masters/JobRolePage'));
 const EmployeePage = lazy(() => import('@/pages/admin/masters/EmployeePage'));
 const CompetencyMasterPage = lazy(() => import('@/pages/admin/masters/CompetencyMasterPage'));
 const CourseCategoryPage = lazy(() => import('@/pages/admin/masters/CourseCategoryPage'));
+const CourseMasterPage = lazy(() => import('@/pages/admin/masters/CourseMasterPage'));
+const CourseBuilderStudio = lazy(() => import('@/pages/admin/builder/CourseBuilderStudio'));
 
 // Placeholder for pages that are not yet implemented
 const ComingSoon = () => (
@@ -85,8 +87,12 @@ export const AppRoutes = () => {
                 <Route path="/admin/employees" element={<EmployeePage />} />
                 <Route path="/admin/competency" element={<CompetencyMasterPage />} />
                 <Route path="/admin/course-categories" element={<CourseCategoryPage />} />
+                <Route path="/admin/courses" element={<CourseMasterPage />} />
                 <Route path="/admin/settings" element={<ComingSoon />} />
               </Route>
+              
+              {/* Studio runs outside of standard AdminLayout for full screen */}
+              <Route path="/admin/courses/builder/:id" element={<CourseBuilderStudio />} />
             </Route>
 
             <Route element={<DashboardLayout />}>

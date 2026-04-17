@@ -42,7 +42,7 @@ class AssessmentMasterAdmin(admin.ModelAdmin):
 class UserAnswerInline(admin.TabularInline):
     model = UserAnswer
     extra = 0
-    readonly_fields = ("question", "selected_option", "answer_text", "uploaded_file", "is_auto_graded", "earned_points")
+    readonly_fields = ("question", "status", "started_at", "finished_at", "answer_text", "uploaded_file", "is_auto_graded", "earned_points")
     can_delete = False
 
 

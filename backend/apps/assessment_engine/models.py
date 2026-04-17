@@ -45,6 +45,10 @@ class AssessmentMaster(models.Model):
         default=False, 
         help_text="If true, question order will be shuffled for each student."
     )
+    negative_marking_enabled = models.BooleanField(
+        default=False,
+        help_text="If enabled, incorrect answers will deduct points based on the percentage below."
+    )
     negative_marking_percentage = models.DecimalField(
         max_digits=5, 
         decimal_places=2, 
@@ -158,6 +162,10 @@ class AssessmentQuestionMapping(models.Model):
         default=1.00,
         help_text="How many points this question is worth in this specific assessment."
     )
+    time_limit_seconds = models.PositiveIntegerField(
+        default=0,
+        help_text="Time limit for this specific question in seconds. 0 for unlimited."
+    )
     display_order = models.PositiveIntegerField(default=1)
 
     class Meta:
@@ -218,13 +226,26 @@ class UserAnswer(models.Model):
         on_delete=models.PROTECT
     )
     
-    # Generic storage fields for different question types
-    selected_option = models.ForeignKey(
-        QuestionOption, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True
+    # Stateful Tracking
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("NOT_VISITED", "Not Visited"),
+            ("ATTEMPTED", "Attempted"),
+            ("TIMED_OUT", "Timed Out")
+        ],
+        default="NOT_VISITED"
     )
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    # Multi-Select Support
+    selected_options = models.ManyToManyField(
+        QuestionOption,
+        blank=True,
+        related_name="user_answers"
+    )
+    
     answer_text = models.TextField(blank=True, default="")
     uploaded_file = models.ForeignKey(
         "file_management.FileRegistry", 

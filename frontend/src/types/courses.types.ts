@@ -93,3 +93,30 @@ export interface CourseDetail extends CourseMaster {
   tags: CourseTagMap[];
   skills: CourseSkillMapping[];
 }
+
+export interface CurriculumSyncContentPayload {
+  id?: number;
+  content_type: CourseContentType;
+  content_url: string;
+  file_ref?: number | null;
+  display_order: number;
+}
+
+export interface CurriculumSyncLessonPayload {
+  id?: number;
+  lesson_title: string;
+  estimated_duration_minutes: number;
+  display_order: number;
+  contents: CurriculumSyncContentPayload[];
+}
+
+export interface CurriculumSyncSectionPayload {
+  id?: number;
+  section_title: string;
+  display_order: number;
+  lessons: CurriculumSyncLessonPayload[];
+}
+
+export interface CurriculumSyncPayload {
+  sections: CurriculumSyncSectionPayload[];
+}

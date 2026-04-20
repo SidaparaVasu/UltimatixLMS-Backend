@@ -342,19 +342,33 @@ export const LearnerPreviewPane: React.FC<LearnerPreviewPaneProps> = ({
                 <VideoViewer videoUrl={selectedLesson.videoUrl} title={selectedLesson.title} />
               )}
               {selectedLesson.contentType === 'PDF' && (
-                <DocumentViewer contentType="PDF" docMetadata={selectedLesson.docMetadata} />
+                <DocumentViewer contentType="PDF" docMetadata={selectedLesson.docMetadata} fileUrl={selectedLesson.fileUrl} />
               )}
               {selectedLesson.contentType === 'PPT' && (
-                <DocumentViewer contentType="PPT" docMetadata={selectedLesson.docMetadata} />
+                <DocumentViewer contentType="PPT" docMetadata={selectedLesson.docMetadata} fileUrl={selectedLesson.fileUrl} />
+              )}
+              {selectedLesson.contentType === 'DOCUMENT' && (
+                <DocumentViewer contentType="DOCUMENT" docMetadata={selectedLesson.docMetadata} fileUrl={selectedLesson.fileUrl} />
               )}
               {selectedLesson.contentType === 'QUIZ' && (
                 <QuizPlayer quizData={(selectedLesson as any).quizData} lessonTitle={selectedLesson.title} />
               )}
               {selectedLesson.contentType === 'LINK' && (
-                <div className="flex flex-col items-center justify-center h-64 rounded-xl bg-slate-900/50 border border-dashed border-slate-700 text-slate-400 gap-4">
+                <div className="flex flex-col items-center justify-center h-64 rounded-xl bg-slate-900/50 border border-dashed border-slate-700 text-slate-400 gap-4 p-6 text-center">
                   <LinkIcon size={36} className="opacity-30" />
                   <p className="text-sm font-medium">External resource link.</p>
-                  <p className="text-xs text-slate-600">URL will be available after backend integration.</p>
+                  {selectedLesson.contentUrl ? (
+                    <a
+                      href={selectedLesson.contentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-400 hover:text-blue-300 break-all"
+                    >
+                      {selectedLesson.contentUrl}
+                    </a>
+                  ) : (
+                    <p className="text-xs text-slate-600">No resource URL added yet.</p>
+                  )}
                 </div>
               )}
 

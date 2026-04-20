@@ -1,7 +1,12 @@
 import { apiClient } from "./axios-client";
 import { handleApiResponse, handleApiError } from "@/utils/api-utils";
 import { PaginatedResponse } from "./organization-api";
-import { CourseCategory, CourseDetail, CourseMaster } from "@/types/courses.types";
+import { 
+  CourseCategory, 
+  CourseDetail, 
+  CourseMaster, 
+  CurriculumSyncPayload,
+} from "@/types/courses.types";
 
 /**
  * Course Management API - handles categories, courses, lessons, etc.
@@ -142,6 +147,15 @@ export const courseApi = {
   deleteLesson: async (id: number) => {
     try {
       const response = await apiClient.delete(`/courses/lessons/${id}/`);
+      return handleApiResponse(response.data);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  syncCurriculum: async (id: number, data: CurriculumSyncPayload) => {
+    try {
+      const response = await apiClient.patch(`/courses/courses/${id}/curriculum-sync/`, data);
       return handleApiResponse(response.data);
     } catch (error) {
       return handleApiError(error);

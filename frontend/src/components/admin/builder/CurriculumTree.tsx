@@ -46,6 +46,7 @@ export interface CurriculumNode {
   dbId?: number;
   type: NodeType;
   title: string;
+  estimatedDurationMinutes?: number;
   contentType?: ContentType;
   children?: CurriculumNode[];
   isExpanded?: boolean;
@@ -110,6 +111,7 @@ const SortableNode: React.FC<SortableItemProps> = ({
       case "VIDEO": return <Video size={14} className="text-blue-500" />;
       case "PDF": return <FileText size={14} className="text-red-500" />;
       case "PPT": return <FileText size={14} className="text-orange-500" />;
+      case "DOCUMENT": return <FileText size={14} className="text-rose-400" />;
       case "QUIZ": return <FileText size={14} className="text-purple-500" />;
       default: return <LinkIcon size={14} className="text-slate-400" />;
     }

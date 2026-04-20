@@ -2,8 +2,9 @@ import React from 'react';
 import { FileText, Presentation, UploadCloud, ExternalLink, Eye } from 'lucide-react';
 
 interface DocumentViewerProps {
-  contentType: 'PDF' | 'PPT';
+  contentType: 'PDF' | 'PPT' | 'DOCUMENT';
   docMetadata?: { name: string; size: string } | null;
+  fileUrl?: string | null;
 }
 
 /**
@@ -12,8 +13,9 @@ interface DocumentViewerProps {
  * Backend integration: replace the card preview with an <iframe> pointing to
  * the backend-served document URL (e.g., Google Docs Viewer or direct PDF embed).
  */
-export const DocumentViewer: React.FC<DocumentViewerProps> = ({ contentType, docMetadata }) => {
+export const DocumentViewer: React.FC<DocumentViewerProps> = ({ contentType, docMetadata, fileUrl }) => {
   const isPDF = contentType === 'PDF';
+  const isPresentation = contentType === 'PPT';
 
   // ── Empty State: No document uploaded yet ──────────────────────────
   if (!docMetadata) {
@@ -25,8 +27,8 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ contentType, doc
     );
   }
 
-  const Icon = isPDF ? FileText : Presentation;
-  const accentColor = isPDF ? 'red' : 'orange';
+  const Icon = isPresentation ? Presentation : FileText;
+  const accentColor = isPresentation ? 'orange' : 'red';
 
   const accentClasses = {
     red: {
@@ -73,14 +75,26 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ contentType, doc
         </span>
 
         {/* Preview placeholder button */}
-        <button
-          disabled
-          className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm font-medium cursor-not-allowed opacity-60"
-          title="In-browser viewer available after backend integration"
-        >
-          <Eye size={16} />
-          Open Document Viewer
-        </button>
+        {fileUrl ? (
+          <a
+            href={fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm font-medium hover:bg-slate-700 transition"
+          >
+            <Eye size={16} />
+            Open Document Viewer
+          </a>
+        ) : (
+          <button
+            disabled
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm font-medium cursor-not-allowed opacity-60"
+            title="In-browser viewer available after backend integration"
+          >
+            <Eye size={16} />
+            Open Document Viewer
+          </button>
+        )}
 
         {/* Integration note */}
         <p className="text-[10px] text-slate-600 max-w-xs">
@@ -98,14 +112,26 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({ contentType, doc
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${accentClasses.badge}`}>
             {docMetadata.size}
           </span>
-          <button
-            disabled
-            className="flex items-center gap-1 text-[10px] text-slate-600 cursor-not-allowed"
-            title="Available after backend integration"
-          >
-            <ExternalLink size={10} />
-            Download
-          </button>
+          {fileUrl ? (
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-200"
+            >
+              <ExternalLink size={10} />
+              Download
+            </a>
+          ) : (
+            <button
+              disabled
+              className="flex items-center gap-1 text-[10px] text-slate-600 cursor-not-allowed"
+              title="Available after backend integration"
+            >
+              <ExternalLink size={10} />
+              Download
+            </button>
+          )}
         </div>
       </div>
     </div>

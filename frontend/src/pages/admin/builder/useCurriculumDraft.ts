@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CourseContent, CourseDetail, CourseSection, CourseLesson } from '@/types/courses.types';
 import { CurriculumNode } from '@/components/admin/builder/CurriculumTree';
+import { CurriculumSyncPayload } from '@/api/course-api';
 
 const mapLessonContentToNode = (contents?: CourseContent[]) => {
   const primaryContent = contents?.[0];
@@ -51,6 +52,7 @@ export const useCurriculumDraft = (initialCourse?: CourseDetail | null) => {
           dbId: les.id,
           type: 'LESSON',
           title: les.lesson_title || 'Untitled Lesson',
+          estimatedDurationMinutes: les.estimated_duration_minutes ?? 15,
           ...mapLessonContentToNode(les.contents),
         }))
       }));
@@ -62,6 +64,7 @@ export const useCurriculumDraft = (initialCourse?: CourseDetail | null) => {
     const newId = dbId ? `section-${dbId}` : `new-sec-${Date.now()}`;
     const newNode: CurriculumNode = {
       id: newId,
+      dbId,
       title,
       type: 'SECTION',
       children: [],
@@ -73,22 +76,26 @@ export const useCurriculumDraft = (initialCourse?: CourseDetail | null) => {
 
   const addLesson = (sectionId: string, title: string, contentType: any, dbId?: number) => {
     const newId = dbId ? `lesson-${dbId}` : `new-les-${Date.now()}`;
+    const newNode: CurriculumNode = {
+      id: newId,
+      dbId,
+      type: 'LESSON',
+      title,
+      estimatedDurationMinutes: 15,
+      contentType,
+    };
     
     setNodes(prev => prev.map(sec => {
       if (sec.id === sectionId) {
         return {
           ...sec,
-          children: [...(sec.children || []), {
-            id: newId,
-            type: 'LESSON',
-            title,
-            contentType,
-          }]
+          children: [...(sec.children || []), newNode]
         };
       }
       return sec;
     }));
     markDirty();
+    return newNode;
   };
 
   const removeNode = (id: string, type: 'SECTION' | 'LESSON', parentId?: string) => {
@@ -108,21 +115,58 @@ export const useCurriculumDraft = (initialCourse?: CourseDetail | null) => {
     markDirty();
   };
   
-  const updateNodeTitle = (id: string, type: 'SECTION' | 'LESSON', title: string, parentId?: string) => {
+  const updateNode = (id: string, type: 'SECTION' | 'LESSON', updates: Partial<CurriculumNode>, parentId?: string) => {
     if (type === 'SECTION') {
-      setNodes(prev => prev.map(n => n.id === id ? { ...n, title } : n));
+      setNodes(prev => prev.map(n => n.id === id ? { ...n, ...updates } : n));
     } else if (parentId) {
       setNodes(prev => prev.map(sec => {
         if (sec.id === parentId) {
           return {
             ...sec,
-            children: (sec.children || []).map(c => c.id === id ? { ...c, title } : c)
+            children: (sec.children || []).map(c => c.id === id ? { ...c, ...updates } : c)
           };
         }
         return sec;
       }));
     }
     markDirty();
+  };
+
+  const toCurriculumSyncPayload = (): CurriculumSyncPayload => {
+    const buildLessonContents = (lesson: CurriculumNode) => {
+      const persistedType = lesson.contentType && lesson.contentType !== 'SCORM' ? lesson.contentType : undefined;
+      const hasPersistableValue =
+        persistedType === 'QUIZ' ||
+        ((persistedType === 'VIDEO' || persistedType === 'LINK') && !!lesson.contentUrl?.trim()) ||
+        ((persistedType === 'PDF' || persistedType === 'PPT' || persistedType === 'DOCUMENT') && !!lesson.fileRefId);
+
+      if (!persistedType || !hasPersistableValue) {
+        return [];
+      }
+
+      return [{
+        ...(lesson.contentId ? { id: lesson.contentId } : {}),
+        content_type: persistedType,
+        content_url: lesson.contentUrl?.trim() || '',
+        file_ref: lesson.fileRefId ?? null,
+        display_order: 1,
+      }];
+    };
+
+    return {
+      sections: nodes.map((section, sectionIndex) => ({
+        ...(section.dbId ? { id: section.dbId } : {}),
+        section_title: section.title,
+        display_order: sectionIndex + 1,
+        lessons: (section.children || []).map((lesson, lessonIndex) => ({
+          ...(lesson.dbId ? { id: lesson.dbId } : {}),
+          lesson_title: lesson.title,
+          estimated_duration_minutes: lesson.estimatedDurationMinutes ?? 15,
+          display_order: lessonIndex + 1,
+          contents: buildLessonContents(lesson),
+        })),
+      })),
+    };
   };
 
   // Expects the entire new tree after a drag/drop reorder
@@ -138,7 +182,8 @@ export const useCurriculumDraft = (initialCourse?: CourseDetail | null) => {
     addSection,
     addLesson,
     removeNode,
-    updateNodeTitle,
+    updateNode,
     updateTree,
+    toCurriculumSyncPayload,
   };
 };

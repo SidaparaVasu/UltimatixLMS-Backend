@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, PlayCircle, Settings, LayoutTemplate, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -16,7 +16,7 @@ const CourseBuilderStudio: React.FC = () => {
   const navigate = useNavigate();
 
   // Fetch course details
-  const { data: courseRes, isLoading } = useQuery({
+  const { data: courseRes, isLoading, refetch } = useQuery({
     queryKey: ['admin', 'courses', id],
     queryFn: () => courseApi.getCourseDetails(Number(id)),
     enabled: !!id,
@@ -27,8 +27,28 @@ const CourseBuilderStudio: React.FC = () => {
 
   // Layout state
   const [activePane, setActivePane] = useState<'editor' | 'settings'>('settings');
-  const [selectedNode, setSelectedNode] = useState<CurriculumNode | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const selectedNode = useMemo(() => {
+    if (!selectedNodeId) {
+      return null;
+    }
+
+    for (const section of draft.nodes) {
+      if (section.id === selectedNodeId) {
+        return section;
+      }
+
+      const lesson = section.children?.find((child) => child.id === selectedNodeId);
+      if (lesson) {
+        return lesson;
+      }
+    }
+
+    return null;
+  }, [draft.nodes, selectedNodeId]);
 
   // ── Unsaved Changes Guard ──────────────────────────────────────────────────
   useEffect(() => {
@@ -41,6 +61,12 @@ const CourseBuilderStudio: React.FC = () => {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [draft.isDirty]);
+
+  useEffect(() => {
+    if (selectedNodeId && !selectedNode) {
+      setSelectedNodeId(null);
+    }
+  }, [selectedNodeId, selectedNode]);
 
   if (isLoading) {
     return (
@@ -72,18 +98,17 @@ const CourseBuilderStudio: React.FC = () => {
   const handleCreateNode = (type: 'SECTION' | 'LESSON', parentId?: string) => {
     if (type === 'SECTION') {
       const newNode = draft.addSection('New Section');
-      setSelectedNode(newNode);
+      setSelectedNodeId(newNode.id);
     } else if (parentId) {
-      draft.addLesson(parentId, 'New Lesson', undefined);
-      // For immediate select, we'd need to return the new node from addLesson
+      const newNode = draft.addLesson(parentId, 'New Lesson', undefined);
+      setSelectedNodeId(newNode.id);
     }
   };
 
   const handleDeleteNode = (node: CurriculumNode) => {
-    // Basic structural delete. In reality this should call `deleteSection` or `deleteLesson`
     draft.removeNode(node.id, node.type, node.type === 'LESSON' ? getParentSectionId(node.id) : undefined);
-    if (selectedNode?.id === node.id) {
-      setSelectedNode(null);
+    if (selectedNodeId === node.id) {
+      setSelectedNodeId(null);
     }
   };
 
@@ -98,19 +123,30 @@ const CourseBuilderStudio: React.FC = () => {
   };
 
   const handleSaveNode = (id: string, updates: Partial<CurriculumNode>) => {
-      // Find what type the node is and its parent if it's a lesson
-      let isSection = draft.nodes.some(n => n.id === id);
-      let type: 'SECTION' | 'LESSON' = isSection ? 'SECTION' : 'LESSON';
-      let parentId = isSection ? undefined : getParentSectionId(id);
-      
-      if (updates.title) {
-        draft.updateNodeTitle(id, type, updates.title, parentId);
+      const isSection = draft.nodes.some(n => n.id === id);
+      const type: 'SECTION' | 'LESSON' = isSection ? 'SECTION' : 'LESSON';
+      const parentId = isSection ? undefined : getParentSectionId(id);
+
+      if (Object.keys(updates).length > 0) {
+        draft.updateNode(id, type, updates, parentId);
       }
-      
-      // Update selected node locally to reflect changes immediately
-      if (selectedNode && selectedNode.id === id) {
-          setSelectedNode(prev => prev ? { ...prev, ...updates } : null);
+  };
+
+  const handlePublish = async () => {
+    if (!id || !draft.isDirty) {
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      const result = await courseApi.syncCurriculum(Number(id), draft.toCurriculumSyncPayload());
+      if (result !== null) {
+        await refetch();
+        draft.resetDirty();
       }
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -172,9 +208,13 @@ const CourseBuilderStudio: React.FC = () => {
             <PlayCircle size={14} />
             Preview
           </button>
-          <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 rounded shadow-lg shadow-blue-900/20 transition">
+          <button
+            onClick={handlePublish}
+            disabled={!draft.isDirty || isPublishing}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded shadow-lg shadow-blue-900/20 transition"
+          >
             <Save size={14} />
-            Publish Changes
+            {isPublishing ? 'Publishing...' : 'Publish Changes'}
           </button>
         </div>
       </header>
@@ -185,8 +225,8 @@ const CourseBuilderStudio: React.FC = () => {
         {/* Left Pane: Curriculum Tree */}
         <CurriculumTree 
           nodes={draft.nodes}
-          selectedNodeId={selectedNode?.id}
-          onSelect={(node) => { setSelectedNode(node); setActivePane('editor'); }}
+          selectedNodeId={selectedNodeId || undefined}
+          onSelect={(node) => { setSelectedNodeId(node.id); setActivePane('editor'); }}
           onAdd={handleCreateNode}
           onReorder={draft.updateTree}
           onDelete={handleDeleteNode}

@@ -188,6 +188,13 @@ class CourseSkillMappingViewSet(BaseCourseViewSet):
     model = CourseSkillMapping
 
 
+class CourseTagMapViewSet(BaseCourseViewSet):
+    queryset = CourseTagMap.objects.all()
+    serializer_class = CourseTagMapSerializer
+    service_class = CourseTagMapService
+    model = CourseTagMap
+
+
 class CourseResourceViewSet(BaseCourseViewSet):
     queryset = CourseResource.objects.all()
     serializer_class = CourseResourceSerializer

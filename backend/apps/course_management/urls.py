@@ -4,6 +4,7 @@ from .views import (
     CourseCategoryViewSet,
     CourseMasterViewSet,
     TagViewSet,
+    CourseTagMapViewSet,
     CourseSectionViewSet,
     CourseLessonViewSet,
     CourseContentViewSet,
@@ -17,6 +18,7 @@ router = DefaultRouter()
 router.register(r"categories", CourseCategoryViewSet, basename="course_categories")
 router.register(r"courses", CourseMasterViewSet, basename="courses")
 router.register(r"tags", TagViewSet, basename="course_tags")
+router.register(r"tag-mappings", CourseTagMapViewSet, basename="course_tag_mappings")
 router.register(r"sections", CourseSectionViewSet, basename="course_sections")
 router.register(r"lessons", CourseLessonViewSet, basename="course_lessons")
 router.register(r"content", CourseContentViewSet, basename="course_content")

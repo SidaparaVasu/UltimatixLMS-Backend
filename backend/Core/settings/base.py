@@ -199,8 +199,8 @@ REST_FRAMEWORK = {
 # JWT Configuration (djangorestframework-simplejwt)
 # ---------------------------------------------------------------------------
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=180),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "ROTATE_REFRESH_TOKENS": True,           # new refresh token on every refresh
     "BLACKLIST_AFTER_ROTATION": True,        # old refresh tokens are blacklisted
     "ALGORITHM": "HS256",

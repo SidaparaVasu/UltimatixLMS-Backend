@@ -28,6 +28,11 @@ const CourseCategoryPage = lazy(() => import('@/pages/admin/masters/CourseCatego
 const CourseMasterPage = lazy(() => import('@/pages/admin/masters/CourseMasterPage'));
 const CourseBuilderStudio = lazy(() => import('@/pages/admin/builder/CourseBuilderStudio'));
 
+// Learner pages
+const CourseCatalogPage = lazy(() => import('@/pages/learner/CourseCatalogPage'));
+const CourseDetailPage = lazy(() => import('@/pages/learner/CourseDetailPage'));
+const MyLearningPage = lazy(() => import('@/pages/learner/MyLearningPage'));
+
 // Placeholder for pages that are not yet implemented
 const ComingSoon = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -102,8 +107,12 @@ export const AppRoutes = () => {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/security" element={<SecuritySettingsPage />} />
 
+              {/* Learner Routes */}
+              <Route path="/courses" element={<CourseCatalogPage />} />
+              <Route path="/courses/:id" element={<CourseDetailPage />} />
+              <Route path="/my-learning" element={<MyLearningPage />} />
+
               {/* Coming Soon Routes */}
-              <Route path="/courses" element={<ComingSoon />} />
               <Route path="/skills" element={<ComingSoon />} />
               <Route path="/calendar" element={<ComingSoon />} />
               <Route path="/assessments" element={<ComingSoon />} />

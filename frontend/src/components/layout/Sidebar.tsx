@@ -26,7 +26,8 @@ export const Sidebar = () => {
       title: "General",
       items: [
         { label: "Overview", icon: LayoutDashboard, path: "/dashboard", badge: null },
-        { label: "My Courses", icon: BookOpen, path: "/courses", badge: "3" },
+        { label: "My Learning", icon: Star, path: "/my-learning", badge: "3" },
+        { label: "Explore Courses", icon: BookOpen, path: "/courses", badge: null },
         { label: "Skill Matrix", icon: Star, path: "/skills", badge: null },
       ]
     },

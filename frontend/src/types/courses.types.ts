@@ -17,7 +17,7 @@ export interface CourseMaster {
   course_code: string;
   category: number;
   description: string;
-  difficulty_level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'DOCTOR' | undefined;
+  difficulty_level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | undefined;
   estimated_duration_hours: number;
   status: CourseStatus;
   created_by?: number;
@@ -146,4 +146,37 @@ export interface CurriculumSyncSectionPayload {
 
 export interface CurriculumSyncPayload {
   sections: CurriculumSyncSectionPayload[];
+}
+
+// Enrollment status from backend constants
+export type EnrollmentStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'DROPPED';
+
+// Enrollment type from backend constants
+export type EnrollmentType = 'SELF_ENROLL' | 'MANDATORY' | 'RECOMMENDED' | 'TNI_ASSIGNED';
+
+export interface UserCourseEnrollment {
+  id: number;
+  course: number;
+  course_title: string;
+  course_code: string;
+  category_name: string;
+  enrollment_type: EnrollmentType;
+  status: EnrollmentStatus;
+  progress_percentage: string; // decimal string from backend e.g. "45.00"
+  enrolled_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+export interface CourseCertificate {
+  id: number;
+  enrollment: number;
+  certificate_number: string;
+  issued_at: string;
+  expiry_date: string | null;
+  verification_code: string;
+}
+
+export interface EnrollRequest {
+  course_id: number;
 }

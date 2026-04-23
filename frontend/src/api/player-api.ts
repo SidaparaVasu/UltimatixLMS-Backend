@@ -29,6 +29,20 @@ export const playerApi = {
   },
 
   /**
+   * Request a short-lived signed token for secure document viewing.
+   * Token is valid for 5 minutes and tied to the requesting user.
+   * Endpoint: POST /api/v1/files/files/request-token/
+   */
+  requestDocumentToken: async (fileRef: string): Promise<{ token: string; expires_in: number } | null> => {
+    try {
+      const response = await apiClient.post('/files/files/request-token/', { file_ref: fileRef });
+      return handleApiResponse<{ token: string; expires_in: number }>(response.data, false);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  /**
    * Sync heartbeat (playhead position) for a content item.
    * Endpoint: POST /api/v1/learning/heartbeat/sync/
    */

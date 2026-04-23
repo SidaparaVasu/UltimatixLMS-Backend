@@ -1,15 +1,12 @@
 /**
- * Renders PDF / PPT / DOCUMENT content inside an iframe.
+ * Secure File Serve:
+ * 1. Requests a short-lived signed token from POST /api/v1/files/files/request-token/
+ * 2. Fetches the file as a blob via GET /api/v1/files/resources/<token>/
+ *    (axios injects the JWT header — real /media/ path is never exposed)
+ * 3. Creates a temporary object URL and renders it in an iframe
  *
- * Files are served through the authenticated endpoint:
- *   GET /api/v1/files/files/serve/?path=uploads/pdf/filename.pdf
- *
- * This endpoint:
- *   - Requires JWT auth (hides the real /media/ path from the browser)
- *   - Streams the file with correct MIME type and X-Frame-Options: SAMEORIGIN
- *
- * We fetch the file as a blob via axios (which injects the JWT header),
- * then create a temporary object URL for the iframe.
+ * The token is tied to the requesting user and expires in 5 minutes.
+ * The serve endpoint supports HTTP Range requests (PDF.js partial loading).
  */
 
 import { useEffect, useState } from 'react';
@@ -18,6 +15,7 @@ import { CourseLesson, CourseContent } from '@/types/courses.types';
 import { DetailedEnrollmentProgress, LessonProgress } from '@/types/player.types';
 import { LessonNavFooter } from './LessonNavFooter';
 import { apiClient } from '@/api/axios-client';
+import { playerApi } from '@/api/player-api';
 
 interface DocumentViewerProps {
   content: CourseContent;
@@ -25,29 +23,6 @@ interface DocumentViewerProps {
   enrollment: DetailedEnrollmentProgress;
   lessonProgress: LessonProgress | undefined;
   nextLesson: CourseLesson | null;
-}
-
-/**
- * Converts a file_url like "/media/uploads/pdf/abc.pdf"
- * into the relative path "uploads/pdf/abc.pdf" for the serve endpoint.
- */
-function extractRelativePath(fileUrl: string): string {
-  // Strip leading /media/ prefix (MEDIA_URL from Django settings)
-  const mediaPrefix = '/media/';
-  if (fileUrl.startsWith(mediaPrefix)) {
-    return fileUrl.slice(mediaPrefix.length);
-  }
-  // Already a relative path or unknown format — use as-is
-  return fileUrl.replace(/^\/+/, '');
-}
-
-/**
- * Builds the authenticated serve URL.
- * Endpoint: GET /api/v1/files/files/serve/?path=<relative_path>
- */
-function buildServeUrl(fileUrl: string): string {
-  const relativePath = extractRelativePath(fileUrl);
-  return `/files/files/serve/?path=${encodeURIComponent(relativePath)}`;
 }
 
 export const DocumentViewer = ({
@@ -59,75 +34,103 @@ export const DocumentViewer = ({
 }: DocumentViewerProps) => {
   const isAlreadyCompleted = lessonProgress?.status === 'COMPLETED';
 
-  // Prefer file_url (direct storage URL) over content_url
-  const rawFileUrl = content.file_url || content.content_url;
-
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!rawFileUrl) {
-      setIsLoading(false);
-      setLoadError('No file URL available.');
-      return;
-    }
+  // file_ref is the UUID from FileRegistry — present when file was uploaded via file_management
+  // file_url is the /media/... path — used as fallback for externally hosted files
+  const fileRef = content.file_ref ? String(content.file_ref) : null;
+  const rawFileUrl = content.file_url || content.content_url;
 
+  useEffect(() => {
     let objectUrl: string | null = null;
 
-    const fetchFile = async () => {
+    const load = async () => {
       setIsLoading(true);
       setLoadError(null);
       setBlobUrl(null);
 
       try {
-        // External public URL (S3, CDN) — use directly, no auth needed
-        const isExternal =
-          rawFileUrl.startsWith('http') &&
-          !rawFileUrl.includes(window.location.hostname) &&
-          !rawFileUrl.includes('127.0.0.1') &&
-          !rawFileUrl.includes('localhost');
+        // ── Path A: file_ref present → use secure token endpoint ──────────────
+        if (fileRef) {
+          // Step 1: Request a signed token
+          const tokenData = await playerApi.requestDocumentToken(fileRef);
+          if (!tokenData?.token) {
+            setLoadError('Could not obtain access token for this file.');
+            return;
+          }
 
-        if (isExternal) {
-          setBlobUrl(rawFileUrl);
-          setIsLoading(false);
+          // Step 2: Fetch the file blob via the secure serve endpoint
+          // GET /api/v1/files/resources/<token>/
+          const response = await apiClient.get(
+            `/files/resources/${encodeURIComponent(tokenData.token)}/`,
+            { responseType: 'blob' }
+          );
+
+          const mimeType =
+            (response.headers['content-type'] as string) ||
+            getMimeType(content.content_type, rawFileUrl ?? '');
+
+          const blob = new Blob([response.data], { type: mimeType });
+          objectUrl = URL.createObjectURL(blob);
+          setBlobUrl(objectUrl);
           return;
         }
 
-        // Backend-served file — fetch via authenticated serve endpoint
-        const serveUrl = buildServeUrl(rawFileUrl);
-        const response = await apiClient.get(serveUrl, {
-          responseType: 'blob',
-        });
+        // ── Path B: No file_ref — external/public URL ─────────────────────────
+        if (rawFileUrl) {
+          const isExternal =
+            rawFileUrl.startsWith('http') &&
+            !rawFileUrl.includes(window.location.hostname) &&
+            !rawFileUrl.includes('127.0.0.1') &&
+            !rawFileUrl.includes('localhost');
 
-        const blob = new Blob([response.data], {
-          type: response.headers['content-type'] || getMimeType(content.content_type, rawFileUrl),
-        });
-        objectUrl = URL.createObjectURL(blob);
-        setBlobUrl(objectUrl);
+          if (isExternal) {
+            // Public CDN/S3 URL — use directly
+            setBlobUrl(rawFileUrl);
+            return;
+          }
+
+          // Backend-hosted but no file_ref — fetch with auth header
+          const response = await apiClient.get(rawFileUrl, {
+            responseType: 'blob',
+            baseURL: rawFileUrl.startsWith('http') ? '' : undefined,
+          });
+          const mimeType =
+            (response.headers['content-type'] as string) ||
+            getMimeType(content.content_type, rawFileUrl);
+          const blob = new Blob([response.data], { type: mimeType });
+          objectUrl = URL.createObjectURL(blob);
+          setBlobUrl(objectUrl);
+          return;
+        }
+
+        setLoadError('No file reference or URL available for this content.');
       } catch (err: any) {
-        const status = err?.response?.status;
-        if (status === 404) {
+        const httpStatus = err?.response?.status;
+        if (httpStatus === 404) {
           setLoadError('File not found on the server.');
-        } else if (status === 403) {
+        } else if (httpStatus === 403 || httpStatus === 401) {
           setLoadError('You do not have permission to view this file.');
         } else {
           setLoadError('Failed to load document. Please try again.');
         }
-        console.error('DocumentViewer fetch error:', err);
+        console.error('[DocumentViewer] fetch error:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchFile();
+    load();
 
     return () => {
+      // Revoke object URL on unmount or content change to free memory
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [rawFileUrl, content.content_type]);
+  }, [fileRef, rawFileUrl, content.content_type]);
 
-  if (!rawFileUrl) {
+  if (!fileRef && !rawFileUrl) {
     return (
       <div className="flex items-center justify-center h-64">
         <p className="text-sm text-gray-500">Document not available.</p>
@@ -137,9 +140,10 @@ export const DocumentViewer = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Document viewer area */}
+      {/* Viewer area */}
       <div className="flex-1 bg-gray-100 relative" style={{ minHeight: '600px' }}>
-        {/* Loading state */}
+
+        {/* Loading */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
             <div className="flex flex-col items-center gap-2">
@@ -149,24 +153,16 @@ export const DocumentViewer = ({
           </div>
         )}
 
-        {/* Error state */}
+        {/* Error */}
         {loadError && !isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
             <div className="text-center max-w-sm px-4">
               <p className="text-sm text-gray-600 mb-4">{loadError}</p>
-              <a
-                href={rawFileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn text-xs h-8 px-3"
-              >
-                Open in new tab
-              </a>
             </div>
           </div>
         )}
 
-        {/* Iframe — shown once blob URL is ready */}
+        {/* Iframe — rendered from blob URL, no raw /media/ path exposed */}
         {blobUrl && !isLoading && (
           <iframe
             src={blobUrl}

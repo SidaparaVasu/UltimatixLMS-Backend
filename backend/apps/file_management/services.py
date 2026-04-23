@@ -1,6 +1,7 @@
 import os
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.signing import Signer, BadSignature
 from common.services.base import BaseService
 from .repositories import FileRepository
 from .constants import FileType, FileUploadStatus
@@ -68,3 +69,32 @@ class FileService(BaseService):
         })
         
         return registry
+
+    def generate_serve_token(self, file_id, user_id):
+        """
+        Generates a short-lived signed token for secure file access.
+        Token format: <file_id>:<user_id> signed with Django's Signer.
+        Max age: 5 minutes (300 seconds).
+        """
+        signer = Signer(salt='doc-serve')
+        payload = f"{file_id}:{user_id}"
+        return signer.sign(payload)
+
+    def validate_serve_token(self, token, user_id):
+        """
+        Validates a serve token and returns the file_id if valid.
+        Raises BadSignature if token is invalid or user_id doesn't match.
+        """
+        signer = Signer(salt='doc-serve')
+        try:
+            payload = signer.unsign(token)
+            file_id_str, token_user_id_str = payload.split(':')
+            
+            # Verify user_id matches
+            if int(token_user_id_str) != user_id:
+                raise BadSignature("User ID mismatch")
+            
+            return file_id_str
+        except (BadSignature, ValueError) as e:
+            raise BadSignature(f"Invalid token: {str(e)}")
+

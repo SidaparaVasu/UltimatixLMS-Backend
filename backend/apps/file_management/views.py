@@ -127,6 +127,25 @@ class FileViewSet(viewsets.ModelViewSet):
                 return self.queryset.filter(uploaded_by=employee)
         return self.queryset.none()
 
+    @action(detail=False, methods=['get'], url_path='conversion-health')
+    def conversion_health(self, request):
+        """
+        Health check: reports whether unoconv is available on the server.
+        GET /api/v1/files/files/conversion-health/
+        """
+        available = FileService.is_unoconv_available()
+        return success_response(
+            data={
+                "unoconv_available": available,
+                "message": (
+                    "unoconv is installed and PPT→PDF conversion is enabled."
+                    if available
+                    else "unoconv is NOT installed. PPT files cannot be converted to PDF."
+                ),
+            },
+            message="Conversion health check complete."
+        )
+
     @action(detail=False, methods=['post'], url_path='request-token')
     def request_token(self, request):
         """
@@ -137,24 +156,33 @@ class FileViewSet(viewsets.ModelViewSet):
 
         Returns: { "token": "<signed_token>", "expires_in": 300 }
 
-        The token encodes file_id + user_id and is signed with Django's Signer.
-        It expires after 5 minutes (enforced at serve time via timestamp check).
+        For PPT files: the token is issued against the original PPT record ID.
+        The serve endpoint transparently resolves to the converted PDF.
         """
         file_ref = request.data.get('file_ref')
         if not file_ref:
             return error_response(message="file_ref is required.", status_code=400)
 
-        # Verify the file exists
         try:
             file_record = FileRegistry.objects.get(pk=file_ref)
         except FileRegistry.DoesNotExist:
             return error_response(message="File not found.", status_code=404)
 
-        # Verify the file is on disk
-        abs_path = os.path.join(settings.MEDIA_ROOT, str(file_record.file))
+        # For PPT: check the converted PDF is ready
+        effective = file_record.effective_pdf
+        if effective is None:
+            return error_response(
+                message="PDF conversion is pending or failed. Please try again later.",
+                status_code=503
+            )
+
+        # Verify the effective file is on disk
+        abs_path = os.path.join(settings.MEDIA_ROOT, str(effective.file))
         if not os.path.exists(abs_path):
             return error_response(message="File not available on server.", status_code=404)
 
+        # Token is issued against the original file_ref (not the converted PDF)
+        # The serve endpoint resolves effective_pdf transparently
         token = self.service_class.generate_serve_token(
             file_id=str(file_record.pk),
             user_id=request.user.pk,
@@ -163,7 +191,7 @@ class FileViewSet(viewsets.ModelViewSet):
         return success_response(
             data={
                 "token": token,
-                "expires_in": 300,  # seconds — informational for the frontend
+                "expires_in": 300,
             },
             message="Token issued."
         )
@@ -205,6 +233,7 @@ class SecureFileServeView(APIView):
     GET /api/v1/files/resources/<token>/
 
     - Validates the signed token (file_id + user_id)
+    - For PPT records: transparently serves the converted PDF instead
     - Supports HTTP Range requests (for PDF.js partial loading)
     - Returns security headers that prevent download/caching
     - Never exposes the real /media/ path
@@ -231,16 +260,28 @@ class SecureFileServeView(APIView):
         except FileRegistry.DoesNotExist:
             raise Http404("File not found.")
 
-        # 3. Resolve absolute path
-        abs_path = os.path.join(settings.MEDIA_ROOT, str(file_record.file))
+        # 3. For PPT/PPTX: transparently serve the converted PDF
+        #    effective_pdf returns self for PDFs, or the converted_pdf for PPTs
+        effective = file_record.effective_pdf
+        if effective is None:
+            # PPT exists but conversion hasn't completed or failed
+            from common.response import error_response as _err
+            from rest_framework.response import Response
+            return Response(
+                {"success": False, "message": "PDF conversion is pending or failed. Please try again later."},
+                status=503
+            )
+
+        # 4. Resolve absolute path of the effective (PDF) file
+        abs_path = os.path.join(settings.MEDIA_ROOT, str(effective.file))
         if not os.path.exists(abs_path) or not os.path.isfile(abs_path):
             raise Http404("File not available on server.")
 
-        # 4. Detect MIME type
+        # 5. Detect MIME type
         mime_type, _ = mimetypes.guess_type(abs_path)
         if not mime_type:
             mime_type = 'application/octet-stream'
 
-        # 5. Build and return streaming response with range support
+        # 6. Build and return streaming response with range support
         range_header = request.META.get('HTTP_RANGE')
         return _build_secure_response(abs_path, mime_type, range_header)

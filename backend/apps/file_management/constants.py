@@ -13,4 +13,5 @@ class FileType(models.TextChoices):
 class FileUploadStatus(models.TextChoices):
     PENDING = "PENDING", "Pending"
     UPLOADED = "UPLOADED", "Uploaded"
+    CONVERTING = "CONVERTING", "Converting"   # PPT → PDF in progress
     FAILED = "FAILED", "Failed"

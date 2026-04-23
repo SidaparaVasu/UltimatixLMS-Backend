@@ -8,7 +8,7 @@ from .constants import FileType, FileUploadStatus
 def generate_file_path(instance, filename):
     """
     Generates a unique file path for uploaded files.
-    Format: uploads/{file_type}/{uuid_hex}_{original_name}
+    Format: uploads/{file_type_lower}/{uuid_hex}.{ext}
     """
     ext = filename.split('.')[-1]
     name = f"{uuid.uuid4().hex}.{ext}"
@@ -17,7 +17,11 @@ def generate_file_path(instance, filename):
 
 class FileRegistry(models.Model):
     """
-    Central registry for all uploaded files (PDFs, Videos, etc.)
+    Central registry for all uploaded files (PDFs, Videos, PPTs, etc.)
+
+    PPT/PPTX files are converted to PDF at upload time.
+    The resulting PDF is stored as a separate FileRegistry record and linked
+    via `converted_from` on the PDF record (pointing back to the original PPT).
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     original_name = models.CharField(max_length=255)
@@ -33,7 +37,18 @@ class FileRegistry(models.Model):
         choices=FileUploadStatus.choices,
         default=FileUploadStatus.PENDING
     )
-    # Allows tracking who uploaded the file. We use employee record for our LMS
+
+    # When a PPT is converted to PDF, the resulting PDF record points back here.
+    # Conversely, the PPT record's `converted_pdf` reverse relation gives the PDF.
+    converted_from = models.OneToOneField(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='converted_pdf',
+        help_text="For PDF records that were converted from a PPT/PPTX, this points to the original."
+    )
+
     uploaded_by = models.ForeignKey(
         "org_management.EmployeeMaster",
         on_delete=models.SET_NULL,
@@ -51,3 +66,19 @@ class FileRegistry(models.Model):
 
     def __str__(self):
         return f"{self.original_name} ({self.get_file_type_display()})"
+
+    @property
+    def effective_pdf(self):
+        """
+        Returns the PDF version of this file.
+        - If this record IS a PDF, returns self.
+        - If this is a PPT with a converted PDF, returns the converted PDF record.
+        - Otherwise returns None.
+        """
+        if self.file_type == FileType.PDF:
+            return self
+        # PPT/PPTX — check for converted PDF
+        try:
+            return self.converted_pdf  # reverse OneToOne from converted_from
+        except FileRegistry.DoesNotExist:
+            return None

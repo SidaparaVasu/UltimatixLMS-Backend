@@ -151,6 +151,10 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50 MB
 ALLOWED_UPLOAD_EXTENSIONS = ["pdf", "ppt", "pptx", "mp4", "webm", "mov", "zip"]
 MAX_UPLOAD_SIZE_MB = 50
 
+# PPT → PDF conversion settings
+# Timeout in seconds for unoconv subprocess (default: 120s for large files)
+UNOCONV_TIMEOUT_SECONDS = 120
+
 # ---------------------------------------------------------------------------
 # Django REST Framework
 # ---------------------------------------------------------------------------

@@ -335,6 +335,112 @@ class DashboardRepository(BaseRepository):
         
         return result
 
+    def get_company_employee_stats(self, company_id=None, scope_type="GLOBAL", scope_id=None):
+        """
+        Returns employee and learning statistics scoped by the user's role assignment.
+
+        Scope resolution:
+          GLOBAL / COMPANY  → all active employees in the company
+          BUSINESS_UNIT     → employees in the given business unit
+          DEPARTMENT        → employees in the given department
+          SELF              → falls back to company scope
+        """
+        from apps.org_management.constants import EmploymentStatus
+
+        employees_query = EmployeeMaster.objects.filter(
+            employment_status=EmploymentStatus.ACTIVE
+        )
+
+        if scope_type == "BUSINESS_UNIT" and scope_id:
+            employees_query = employees_query.filter(business_unit_id=scope_id)
+        elif scope_type == "DEPARTMENT" and scope_id:
+            employees_query = employees_query.filter(department_id=scope_id)
+        elif company_id:
+            employees_query = employees_query.filter(company_id=company_id)
+
+        total_employees = employees_query.count()
+        employee_ids = list(employees_query.values_list("id", flat=True))
+
+        enrollments_query = UserCourseEnrollment.objects.filter(
+            employee_id__in=employee_ids
+        )
+
+        total_enrollments = enrollments_query.count()
+        completed = enrollments_query.filter(status=ProgressStatus.COMPLETED).count()
+        in_progress = enrollments_query.filter(status=ProgressStatus.IN_PROGRESS).count()
+
+        completion_rate = (
+            (completed / total_enrollments * 100)
+            if total_enrollments > 0 else 0
+        )
+
+        overdue_threshold = timezone.now() - timedelta(days=30)
+        overdue = enrollments_query.filter(
+            status__in=[ProgressStatus.IN_PROGRESS, ProgressStatus.NOT_STARTED],
+            enrollment_type__in=[EnrollmentType.MANDATORY, EnrollmentType.TNI_ASSIGNED],
+            enrolled_at__lt=overdue_threshold
+        ).count()
+
+        return {
+            "total_employees": total_employees,
+            "total_enrollments": total_enrollments,
+            "completion_rate": round(completion_rate, 2),
+            "in_progress": in_progress,
+            "overdue": overdue,
+        }
+
+    def get_scoped_employees(self, company_id=None, scope_type="GLOBAL", scope_id=None):
+        """
+        Returns per-employee learning stats for the scoped set of employees.
+        Used for the HR dashboard chart and table (replaces direct-reports logic).
+        """
+        from apps.org_management.constants import EmploymentStatus
+
+        employees_query = EmployeeMaster.objects.filter(
+            employment_status=EmploymentStatus.ACTIVE
+        ).select_related("user", "user__profile", "department")
+
+        if scope_type == "BUSINESS_UNIT" and scope_id:
+            employees_query = employees_query.filter(business_unit_id=scope_id)
+        elif scope_type == "DEPARTMENT" and scope_id:
+            employees_query = employees_query.filter(department_id=scope_id)
+        elif company_id:
+            employees_query = employees_query.filter(company_id=company_id)
+
+        members = []
+        for employee in employees_query:
+            member_enrollments = UserCourseEnrollment.objects.filter(employee=employee)
+
+            member_in_progress = member_enrollments.filter(status=ProgressStatus.IN_PROGRESS).count()
+            member_completed = member_enrollments.filter(status=ProgressStatus.COMPLETED).count()
+            member_total = member_enrollments.count()
+            member_completion_pct = (
+                (member_completed / member_total * 100)
+                if member_total > 0 else 0
+            )
+            member_overdue = member_enrollments.filter(
+                status__in=[ProgressStatus.NOT_STARTED, ProgressStatus.IN_PROGRESS],
+                enrollment_type__in=[EnrollmentType.MANDATORY, EnrollmentType.TNI_ASSIGNED],
+                enrolled_at__lt=timezone.now() - timedelta(days=30)
+            ).count()
+            avg_progress = member_enrollments.filter(
+                status=ProgressStatus.IN_PROGRESS
+            ).aggregate(avg=Avg("progress_percentage"))["avg"] or 0
+
+            members.append({
+                "employee_id": employee.id,
+                "employee_code": employee.employee_code,
+                "employee_name": employee.user_label() if employee.user else employee.employee_code,
+                "department": employee.department.department_name,
+                "in_progress_count": member_in_progress,
+                "completed_count": member_completed,
+                "completion_percentage": round(member_completion_pct, 2),
+                "overdue_count": member_overdue,
+                "avg_progress": round(float(avg_progress), 2),
+            })
+
+        return members
+
     def get_recent_enrollments(self, company_id=None, limit=10):
         """
         Returns the most recent enrollments across all users.

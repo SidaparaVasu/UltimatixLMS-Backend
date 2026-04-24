@@ -4,6 +4,8 @@ import type { ActivityChartFilter } from "@/types/dashboard.types";
 
 export const DASHBOARD_QUERY_KEYS = {
   enrollmentSummary: ["dashboard", "enrollment-summary"],
+  hrStats: ["dashboard", "hr-stats"],
+  hrEmployees: ["dashboard", "hr-employees"],
   managerStats: ["dashboard", "manager-stats"],
   adminStats: ["dashboard", "admin-stats"],
   activityChart: (filter: ActivityChartFilter) => ["dashboard", "activity-chart", filter],
@@ -18,7 +20,23 @@ export const useEnrollmentSummary = () =>
     staleTime: 5 * 60 * 1000, // 5 min
   });
 
-/** Manager dashboard — team stats + member breakdown */
+/** HR dashboard — company-wide employee count + learning stats */
+export const useHrStats = () =>
+  useQuery({
+    queryKey: DASHBOARD_QUERY_KEYS.hrStats,
+    queryFn: dashboardApi.getHrStats,
+    staleTime: 5 * 60 * 1000,
+  });
+
+/** HR dashboard — scoped per-employee list for chart and table */
+export const useHrEmployees = () =>
+  useQuery({
+    queryKey: DASHBOARD_QUERY_KEYS.hrEmployees,
+    queryFn: dashboardApi.getHrEmployees,
+    staleTime: 5 * 60 * 1000,
+  });
+
+/** Manager dashboard — team stats + member breakdown (preserved) */
 export const useManagerStats = () =>
   useQuery({
     queryKey: DASHBOARD_QUERY_KEYS.managerStats,

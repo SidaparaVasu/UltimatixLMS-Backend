@@ -58,6 +58,27 @@ export interface ActivityChartData {
   data: ActivityChartDataPoint[];
 }
 
+export interface HrOverview {
+  total_employees: number;
+  total_enrollments: number;
+  completion_rate: number;
+  in_progress: number;
+  overdue: number;
+}
+
+/** Per-employee stats for HR dashboard chart and table (scope-filtered) */
+export interface ScopedEmployee {
+  employee_id: number;
+  employee_code: string;
+  employee_name: string;
+  department: string;
+  in_progress_count: number;
+  completed_count: number;
+  completion_percentage: number;
+  overdue_count: number;
+  avg_progress: number;
+}
+
 export interface RecentEnrollment {
   employee_name: string;
   employee_code: string;

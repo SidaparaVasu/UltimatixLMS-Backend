@@ -7,6 +7,8 @@ import type {
   ActivityChartData,
   ActivityChartFilter,
   RecentEnrollment,
+  HrOverview,
+  ScopedEmployee,
 } from "@/types/dashboard.types";
 
 /**
@@ -23,6 +25,26 @@ export const dashboardApi = {
     try {
       const response = await apiClient.get("/learning/my-learning/summary/");
       return handleApiResponse<EmployeeSummary>(response.data, false);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  /** GET /api/v1/dashboard/hr-stats/ */
+  getHrStats: async () => {
+    try {
+      const response = await apiClient.get("/dashboard/hr-stats/");
+      return handleApiResponse<HrOverview>(response.data, false);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
+  /** GET /api/v1/dashboard/hr-employees/ */
+  getHrEmployees: async () => {
+    try {
+      const response = await apiClient.get("/dashboard/hr-employees/");
+      return handleApiResponse<ScopedEmployee[]>(response.data, false);
     } catch (error) {
       return handleApiError(error);
     }

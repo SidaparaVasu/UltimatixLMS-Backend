@@ -16,6 +16,8 @@ from .serializers import (
     AdminPortalStatsSerializer,
     ActivityChartSerializer,
     RecentEnrollmentSerializer,
+    HrOverviewSerializer,
+    ScopedEmployeeSerializer,
 )
 
 
@@ -44,6 +46,40 @@ class DashboardViewSet(viewsets.ViewSet):
         employee = self._get_user_employee(request)
         return employee.company if employee else None
 
+    def _get_hr_scope(self, request):
+        """
+        Resolves the scope for the HR dashboard from the user's HR role assignment.
+
+        Returns (scope_type, scope_id):
+          - GLOBAL / COMPANY  → ("GLOBAL", None)  — all company employees
+          - BUSINESS_UNIT     → ("BUSINESS_UNIT", <bu_id>)
+          - DEPARTMENT        → ("DEPARTMENT", <dept_id>)
+          - SELF / fallback   → ("GLOBAL", None)
+        """
+        from apps.rbac.models import UserRoleMaster
+        from apps.rbac.constants import ScopeType
+
+        hr_assignment = UserRoleMaster.objects.filter(
+            user=request.user,
+            role__role_code="HR",
+            is_active=True,
+        ).first()
+
+        if not hr_assignment:
+            return "GLOBAL", None
+
+        scope_type = hr_assignment.scope_type
+        scope_id = hr_assignment.scope_id
+
+        if scope_type in (ScopeType.GLOBAL, ScopeType.COMPANY, ScopeType.SELF):
+            return "GLOBAL", None
+        if scope_type == ScopeType.BUSINESS_UNIT:
+            return "BUSINESS_UNIT", scope_id
+        if scope_type == ScopeType.DEPARTMENT:
+            return "DEPARTMENT", scope_id
+
+        return "GLOBAL", None
+
     @extend_schema(
         summary="Employee Dashboard Summary",
         description="Returns enrollment summary for the current employee's dashboard.",
@@ -68,6 +104,56 @@ class DashboardViewSet(viewsets.ViewSet):
         
         return success_response(
             message="Employee summary retrieved successfully.",
+            data=serializer.data
+        )
+
+    @extend_schema(
+        summary="HR Overview Statistics",
+        description="Returns scoped employee count and learning stats for the HR dashboard. Scope is derived from the user's HR role assignment (GLOBAL, BUSINESS_UNIT, or DEPARTMENT).",
+        responses={200: HrOverviewSerializer}
+    )
+    @action(detail=False, methods=["get"], url_path="hr-stats")
+    def hr_stats(self, request):
+        """
+        GET /api/v1/dashboard/hr-stats/
+
+        Returns total employees, enrollment counts, and completion rate
+        scoped by the user's HR role assignment.
+        """
+        company = self._get_user_company(request)
+        company_id = company.id if company else None
+        scope_type, scope_id = self._get_hr_scope(request)
+
+        overview = self.service.get_hr_overview(company_id, scope_type, scope_id)
+        serializer = HrOverviewSerializer(overview)
+
+        return success_response(
+            message="HR overview statistics retrieved successfully.",
+            data=serializer.data
+        )
+
+    @extend_schema(
+        summary="HR Scoped Employee List",
+        description="Returns per-employee learning stats scoped by the user's HR role assignment. Used for the HR dashboard chart and table.",
+        responses={200: ScopedEmployeeSerializer(many=True)}
+    )
+    @action(detail=False, methods=["get"], url_path="hr-employees")
+    def hr_employees(self, request):
+        """
+        GET /api/v1/dashboard/hr-employees/
+
+        Returns per-employee learning stats for the HR dashboard chart and table,
+        scoped by the user's HR role assignment.
+        """
+        company = self._get_user_company(request)
+        company_id = company.id if company else None
+        scope_type, scope_id = self._get_hr_scope(request)
+
+        employees = self.service.get_hr_scoped_employees(company_id, scope_type, scope_id)
+        serializer = ScopedEmployeeSerializer(employees, many=True)
+
+        return success_response(
+            message="HR scoped employees retrieved successfully.",
             data=serializer.data
         )
 

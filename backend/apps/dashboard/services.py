@@ -65,3 +65,17 @@ class DashboardService(BaseService):
         Returns recent enrollments for admin dashboard.
         """
         return self.repository.get_recent_enrollments(company_id, limit)
+
+    def get_hr_overview(self, company_id=None, scope_type="GLOBAL", scope_id=None):
+        """
+        Returns scoped employee and learning stats for the HR dashboard.
+        Scope is derived from the user's HR role assignment.
+        """
+        return self.repository.get_company_employee_stats(company_id, scope_type, scope_id)
+
+    def get_hr_scoped_employees(self, company_id=None, scope_type="GLOBAL", scope_id=None):
+        """
+        Returns per-employee learning stats scoped by the user's role assignment.
+        Used for the HR dashboard chart and table.
+        """
+        return self.repository.get_scoped_employees(company_id, scope_type, scope_id)

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Users, TrendingUp, BookOpen, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
-import type { ManagerTeamStats } from '@/types/dashboard.types';
+import type { ManagerTeamStats, HrOverview } from '@/types/dashboard.types';
 
 interface TeamStatsGridProps {
   stats: ManagerTeamStats | null | undefined;
+  hrStats: HrOverview | null | undefined;
   isLoading: boolean;
 }
 
@@ -50,7 +51,7 @@ const SkeletonCard: React.FC<{ delayClass: string }> = ({ delayClass }) => (
   </div>
 );
 
-export const TeamStatsGrid: React.FC<TeamStatsGridProps> = ({ stats, isLoading }) => {
+export const TeamStatsGrid: React.FC<TeamStatsGridProps> = ({ stats, hrStats, isLoading }) => {
   if (isLoading) {
     return (
       <div className="kpi-grid">
@@ -63,27 +64,27 @@ export const TeamStatsGrid: React.FC<TeamStatsGridProps> = ({ stats, isLoading }
 
   const cards: StatCardProps[] = [
     {
-      label: 'Team Size',
-      value: stats?.team_size ?? 0,
-      trend: `${stats?.team_size ?? 0} members`,
+      label: 'Total Employees',
+      value: hrStats?.total_employees ?? 0,
+      trend: `${hrStats?.total_employees ?? 0} active`,
       trendDir: 'neutral',
-      trendSub: 'direct reports',
+      trendSub: 'in company',
       icon: Users,
       delayClass: 'delay-1',
     },
     {
       label: 'Completion Rate',
-      value: `${stats?.team_completion_rate ?? 0}%`,
-      trend: `${stats?.team_completion_rate ?? 0}%`,
-      trendDir: (stats?.team_completion_rate ?? 0) >= 70 ? 'up' : 'down',
-      trendSub: 'team average',
+      value: `${hrStats?.completion_rate ?? 0}%`,
+      trend: `${hrStats?.completion_rate ?? 0}%`,
+      trendDir: (hrStats?.completion_rate ?? 0) >= 70 ? 'up' : 'down',
+      trendSub: 'company average',
       icon: TrendingUp,
       delayClass: 'delay-2',
     },
     {
       label: 'In Progress',
-      value: stats?.team_in_progress ?? 0,
-      trend: `${stats?.team_in_progress ?? 0} active`,
+      value: hrStats?.in_progress ?? 0,
+      trend: `${hrStats?.in_progress ?? 0} active`,
       trendDir: 'up',
       trendSub: 'enrollments',
       icon: BookOpen,
@@ -91,10 +92,10 @@ export const TeamStatsGrid: React.FC<TeamStatsGridProps> = ({ stats, isLoading }
     },
     {
       label: 'Overdue',
-      value: stats?.team_overdue ?? 0,
-      trend: stats?.team_overdue ? `${stats.team_overdue} overdue` : 'All on track',
-      trendDir: stats?.team_overdue ? 'down' : 'neutral',
-      trendSub: stats?.team_overdue ? 'action needed' : '',
+      value: hrStats?.overdue ?? 0,
+      trend: hrStats?.overdue ? `${hrStats.overdue} overdue` : 'All on track',
+      trendDir: hrStats?.overdue ? 'down' : 'neutral',
+      trendSub: hrStats?.overdue ? 'action needed' : '',
       icon: AlertTriangle,
       delayClass: 'delay-4',
     },

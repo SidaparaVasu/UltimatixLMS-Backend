@@ -1,13 +1,19 @@
 import React from 'react';
-import { useManagerStats } from '@/queries/dashboard/useDashboardQueries';
+import { useManagerStats, useHrStats, useHrEmployees } from '@/queries/dashboard/useDashboardQueries';
 import { TeamStatsGrid } from '@/modules/dashboard/components/manager/TeamStatsGrid';
 import { TeamCompletionChart } from '@/modules/dashboard/components/manager/TeamCompletionChart';
 import { TeamMemberTable } from '@/modules/dashboard/components/manager/TeamMemberTable';
 
 const ManagerDashboard: React.FC = () => {
-  const { data: statsData, isLoading } = useManagerStats();
-  const stats = statsData ?? null;
-  const members = stats?.team_members ?? [];
+  // KPI cards — company-wide stats scoped by HR role assignment
+  const { data: hrData, isLoading: hrLoading } = useHrStats();
+  // Chart + table — per-employee breakdown scoped by HR role assignment
+  const { data: employees, isLoading: empLoading } = useHrEmployees();
+  // Preserved — still available for future manager-specific features
+  const { data: managerStatsData } = useManagerStats();
+
+  const hrStats = hrData ?? null;
+  const scopedEmployees = employees ?? [];
 
   return (
     <div style={{ padding: 'var(--space-4) 0', display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
@@ -21,19 +27,23 @@ const ManagerDashboard: React.FC = () => {
             marginBottom: 'var(--space-1)',
           }}
         >
-          Team Dashboard
+          HR Dashboard
         </h1>
         <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-          Overview of your team's learning progress and completion rates.
+          Employee learning overview scoped to your assigned area.
         </p>
       </div>
 
-      {/* KPI row */}
-      <TeamStatsGrid stats={stats} isLoading={isLoading} />
+      {/* KPI row — company/scope-wide numbers */}
+      <TeamStatsGrid
+        stats={managerStatsData ?? null}
+        hrStats={hrStats}
+        isLoading={hrLoading}
+      />
 
       {/* Chart + Pending approvals stub */}
       <div className="two-col anim delay-3">
-        <TeamCompletionChart members={members} isLoading={isLoading} />
+        <TeamCompletionChart members={scopedEmployees} isLoading={empLoading} />
 
         {/* Pending approvals — stub until Feature 4/5 */}
         <div className="chart-panel" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
@@ -59,9 +69,9 @@ const ManagerDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Team member table */}
+      {/* Employee table — scoped by HR role assignment */}
       <div className="anim delay-4">
-        <TeamMemberTable members={members} isLoading={isLoading} />
+        <TeamMemberTable members={scopedEmployees} isLoading={empLoading} />
       </div>
     </div>
   );

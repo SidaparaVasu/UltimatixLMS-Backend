@@ -73,6 +73,33 @@ class ActivityChartSerializer(serializers.Serializer):
     data = ActivityChartDataPointSerializer(many=True)
 
 
+class HrOverviewSerializer(serializers.Serializer):
+    """
+    HR dashboard company-wide employee and learning statistics.
+    """
+    total_employees = serializers.IntegerField()
+    total_enrollments = serializers.IntegerField()
+    completion_rate = serializers.FloatField()
+    in_progress = serializers.IntegerField()
+    overdue = serializers.IntegerField()
+
+
+class ScopedEmployeeSerializer(serializers.Serializer):
+    """
+    Per-employee learning stats for HR dashboard chart and table.
+    Mirrors TeamMemberSerializer but sourced from scope-filtered employees.
+    """
+    employee_id = serializers.IntegerField()
+    employee_code = serializers.CharField()
+    employee_name = serializers.CharField()
+    department = serializers.CharField()
+    in_progress_count = serializers.IntegerField()
+    completed_count = serializers.IntegerField()
+    completion_percentage = serializers.FloatField()
+    overdue_count = serializers.IntegerField()
+    avg_progress = serializers.FloatField()
+
+
 class RecentEnrollmentSerializer(serializers.Serializer):
     """
     Recent enrollment entry for admin dashboard.

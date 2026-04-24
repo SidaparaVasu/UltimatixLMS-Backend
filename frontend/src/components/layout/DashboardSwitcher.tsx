@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Repeat, ChevronDown, LayoutDashboard, ShieldCheck, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useUIStore, type DashboardView } from '@/stores/uiStore';
 import { useAuthStore } from '@/stores/authStore';
 import { getAllowedViews } from '@/pages/dashboard/DashboardPage';
@@ -13,6 +14,7 @@ const VIEW_META: Record<DashboardView, { label: string; icon: React.ReactNode }>
 export const DashboardSwitcher: React.FC = () => {
   const { activeDashboardView, setDashboardView } = useUIStore();
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -133,7 +135,11 @@ export const DashboardSwitcher: React.FC = () => {
               return (
                 <button
                   key={view}
-                  onClick={() => { setDashboardView(view); setOpen(false); }}
+                  onClick={() => {
+                    setDashboardView(view);
+                    navigate('/dashboard');
+                    setOpen(false);
+                  }}
                   style={{
                     display: 'flex',
                     alignItems: 'center',

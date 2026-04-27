@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { LayoutGrid, Plus } from 'lucide-react';
 import { useCourseCategories, ADMIN_QUERY_KEYS } from '@/queries/admin/useAdminMasters';
-import { courseApi, CourseCategory } from '@/api/course-api';
+import { courseApi } from '@/api/course-api';
+import { CourseCategory } from '@/types/courses.types';
 import { useAdminCRUD } from '@/hooks/admin/useAdminCRUD';
 import { AdminMasterLayout } from '@/components/admin/layout/AdminMasterLayout';
 import { AdminDataTable, DataTableColumn } from '@/components/admin/layout/AdminDataTable';
-import { GridSwitcher, ViewMode } from '@/components/admin/GridSwitcher';
-import { GridTableCard } from '@/components/admin/GridTableCard';
 import { AdminInput, AdminToggle, DialogFooterActions } from '@/components/admin/form';
 import { Dialog } from '@/components/ui/dialog';
 
@@ -51,8 +49,6 @@ const CourseCategoryPage: React.FC = () => {
 
   const { data: response, isLoading, error } = useCourseCategories({ page, page_size: pageSize });
   const categories = response?.results || [];
-
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   /* ── Mutations ── */
   const saveMutation = useMutation({
@@ -119,40 +115,15 @@ const CourseCategoryPage: React.FC = () => {
       onSearchChange={setSearchTerm}
       resultCount={filteredData?.length}
     >
-      <GridSwitcher
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        gridContent={
-          filteredData?.map((cat) => (
-            <GridTableCard<CourseCategory>
-              key={cat.id}
-              row={cat}
-              title={cat.category_name}
-              subtitle={cat.category_code}
-              description={cat.description}
-              isActive={cat.is_active}
-              metrics={[
-                { label: 'Courses', value: cat.course_count || 0 }
-              ]}
-              icon={LayoutGrid}
-              onEdit={() => crud.openDialog(cat)}
-              onDelete={() => deleteMutation.mutate(cat.id)}
-              onView={() => console.log('View', cat.id)}
-            />
-          ))
-        }
-        tableContent={
-          <AdminDataTable<CourseCategory>
-            rowKey="id"
-            columns={buildColumns(crud.openDialog, (cat) => deleteMutation.mutate(cat.id))}
-            data={filteredData}
-            isLoading={isLoading}
-            error={error}
-            emptyMessage="No categories found."
-            skeletonRowCount={4}
-          />
-        }
-      />
+      <AdminDataTable<CourseCategory>
+          rowKey="id"
+          columns={buildColumns(crud.openDialog, (cat) => deleteMutation.mutate(cat.id))}
+          data={filteredData}
+          isLoading={isLoading}
+          error={error}
+          emptyMessage="No categories found."
+          skeletonRowCount={4}
+        />
 
       {/* ── Add/Edit Dialog ── */}
       <Dialog

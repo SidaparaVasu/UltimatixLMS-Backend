@@ -26,7 +26,7 @@ export const EnrollButton = ({
       <button
         disabled
         className={cn(
-          "py-5 bg-green-50 text-green-700 border border-green-200",
+          "py-5 bg-green-50 text-green-700 border border-green-200 rounded-md",
           className
         )}
       >

@@ -88,6 +88,7 @@ export const CourseCard = ({
         {/* Duration */}
         <div className="flex items-center text-xs text-gray-500 mb-3">
           <Clock className="h-3 w-3 mr-1" />
+          duration:&nbsp;
           {course.estimated_duration_hours > 0 
             ? `${course.estimated_duration_hours} hrs`
             : '0 hrs'

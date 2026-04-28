@@ -136,8 +136,30 @@ class CourseMasterViewSet(BaseCourseViewSet):
     serializer_class = CourseMasterSerializer
     service_class = CourseService
     model = CourseMaster
-    filterset_fields = ["category", "difficulty_level", "is_active"]
+    filterset_fields = ["category", "difficulty_level", "is_active", "status"]
     search_fields = ["course_title", "course_code", "description"]
+
+    def get_queryset(self):
+        """
+        Write actions (update, partial_update, destroy, custom actions) always
+        get the full unfiltered queryset so they can operate on inactive courses too.
+
+        Read actions (list) default to is_active=True.
+        Admins can pass ?is_active=false or ?is_active=true to override.
+        """
+        # For any mutating action, skip the visibility filter entirely
+        if self.action in ("update", "partial_update", "destroy",
+                           "sync_curriculum", "participants", "remove_participant"):
+            return CourseMaster.objects.all()
+
+        # For list/retrieve, apply the is_active filter
+        qs = CourseMaster.objects.all()
+        is_active_param = self.request.query_params.get("is_active", None)
+        if is_active_param is not None:
+            qs = qs.filter(is_active=is_active_param.lower() not in ("false", "0"))
+        else:
+            qs = qs.filter(is_active=True)
+        return qs
 
     def get_serializer_class(self):
         if self.action == "retrieve":

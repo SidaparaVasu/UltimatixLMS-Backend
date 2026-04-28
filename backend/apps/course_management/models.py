@@ -73,8 +73,7 @@ class CourseMaster(models.Model):
     )
     # Legacy columns present in DB — kept for backward compatibility.
     # `status` (DRAFT/PUBLISHED/ARCHIVED) is the canonical visibility control.
-    is_published = models.BooleanField(default=False, db_index=True)
-    is_visible = models.BooleanField(default=False)
+    # is_published and is_visible are dead columns — removed from model, pending DB cleanup via migration 0006.
     created_by = models.ForeignKey(
         EmployeeMaster, 
         on_delete=models.SET_NULL, 

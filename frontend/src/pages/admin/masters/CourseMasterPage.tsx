@@ -50,7 +50,19 @@ const CourseMasterPage: React.FC = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const { data: response, isLoading } = useCourses({ page_size: 100 });
+  /* ── Active filter: 'active' | 'inactive' | 'all' ── */
+  const [activeFilter, setActiveFilter] = useState<'active' | 'inactive'>('active');
+
+  // Map filter value to API param
+  const activeParam =
+    activeFilter === 'active' ? true :
+    activeFilter === 'inactive' ? false :
+    undefined;
+
+  const { data: response, isLoading } = useCourses({
+    page_size: 100,
+    ...(activeParam !== undefined ? { is_active: activeParam } : {}),
+  });
   const courses = response?.results || [];
 
   const { data: categoriesRes } = useCourseCategories({ page_size: 100 });
@@ -203,9 +215,29 @@ const CourseMasterPage: React.FC = () => {
       searchTerm={searchTerm}
       onSearchChange={setSearchTerm}
       resultCount={filteredData.length}
+      filterSlot={
+        <select
+          value={activeFilter}
+          onChange={(e) => setActiveFilter(e.target.value as 'active' | 'inactive')}
+          style={{
+            height: '36px',
+            padding: '0 10px',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-surface)',
+            color: 'var(--color-text-primary)',
+            fontSize: 'var(--text-sm)',
+            cursor: 'pointer',
+            outline: 'none',
+          }}
+        >
+          <option value="active">Active courses</option>
+          <option value="inactive">Inactive courses</option>
+        </select>
+      }
     >
       {/* ── Course list ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: '15px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '50% 50%', gap: '15px' }}>
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
         ) : filteredData.length === 0 ? (
@@ -218,6 +250,8 @@ const CourseMasterPage: React.FC = () => {
               background: 'var(--color-surface)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-lg)',
+              width: '100%',
+              gridColumn: '1/-1',
             }}
           >
             No courses found.

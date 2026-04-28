@@ -108,7 +108,6 @@ export const CourseListCard: React.FC<CourseListCardProps> = ({
 }) => {
   const diffStyle   = DIFFICULTY_STYLE[course.difficulty_level ?? ''] ?? DIFFICULTY_STYLE.BEGINNER;
   const statusStyle = STATUS_STYLE[course.status] ?? STATUS_STYLE.DRAFT;
-  const isPublished = course.status === 'PUBLISHED';
   const sectionCount = course.sections?.length ?? 0;
   const lessonCount  = course.sections?.reduce((acc, s) => acc + (s.lessons?.length ?? 0), 0) ?? 0;
 
@@ -179,10 +178,10 @@ export const CourseListCard: React.FC<CourseListCardProps> = ({
           <span style={{
             display: 'flex', alignItems: 'center', gap: '4px',
             fontSize: '11px', fontWeight: 500,
-            color: isPublished ? 'var(--color-accent)' : 'var(--color-text-muted)',
+            color: course.is_active ? 'var(--color-accent)' : 'var(--color-text-muted)',
           }}>
-            {isPublished ? <Eye size={12} /> : <EyeOff size={12} />}
-            {isPublished ? 'Visible to participants' : 'Hidden from participants'}
+            {course.is_active ? <Eye size={12} /> : <EyeOff size={12} />}
+            {course.is_active ? 'Visible to participants' : 'Hidden from participants'}
           </span>
 
           {(course.participant_count ?? 0) > 0 && (

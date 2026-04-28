@@ -24,6 +24,7 @@ from .services import (
     CourseCertificateService
 )
 from .constants import ProgressStatus
+from apps.course_management.models import CourseMaster, CourseStatus
 from common.response import success_response, error_response
 
 
@@ -66,6 +67,7 @@ class UserProgressViewSet(viewsets.ModelViewSet):
     def enroll(self, request):
         """
         Handles self-enrollment into a course.
+        Only PUBLISHED, active courses can be enrolled into.
         """
         course_id = request.data.get("course_id")
         if not course_id:
@@ -74,6 +76,23 @@ class UserProgressViewSet(viewsets.ModelViewSet):
         employee = request.user.employee_record.first()
         if not employee:
              return error_response(message="Employee profile not found")
+
+        # Guard: course must exist, be active, and be published
+        try:
+            course = CourseMaster.objects.get(pk=course_id)
+        except CourseMaster.DoesNotExist:
+            return error_response(message="Course not found.", status_code=404)
+
+        if not course.is_active:
+            return error_response(
+                message="This course is currently unavailable.",
+                status_code=400,
+            )
+        if course.status != CourseStatus.PUBLISHED:
+            return error_response(
+                message="Enrollment is only available for published courses.",
+                status_code=400,
+            )
 
         # Check for existing enrollment
         existing = UserCourseEnrollment.objects.filter(

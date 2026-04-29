@@ -7,7 +7,9 @@ from ..models import (
     JobRoleSkillRequirement,
     EmployeeSkill,
     EmployeeSkillHistory,
-    EmployeeSkillAssessment
+    EmployeeSkillAssessment,
+    EmployeeSkillRating,
+    EmployeeSkillRatingHistory,
 )
 
 
@@ -45,5 +47,60 @@ class EmployeeSkillHistoryRepository(BaseRepository[EmployeeSkillHistory]):
 
 class EmployeeSkillAssessmentRepository(BaseRepository[EmployeeSkillAssessment]):
     model = EmployeeSkillAssessment
+
+
+class EmployeeSkillRatingRepository(BaseRepository[EmployeeSkillRating]):
+    model = EmployeeSkillRating
+
+    def get_for_employee(self, employee_id, rating_type=None, status=None):
+        """
+        Fetch all rating rows for an employee, optionally filtered by
+        rating_type (SELF / MANAGER) and/or status (DRAFT / SUBMITTED).
+        """
+        qs = self.filter(employee_id=employee_id)
+        if rating_type:
+            qs = qs.filter(rating_type=rating_type)
+        if status:
+            qs = qs.filter(status=status)
+        return qs
+
+    def get_single(self, employee_id, skill_id, rating_type):
+        """
+        Fetch the unique rating row for a given employee-skill-type combination.
+        Returns None if not found.
+        """
+        return self.filter(
+            employee_id=employee_id,
+            skill_id=skill_id,
+            rating_type=rating_type,
+        ).first()
+
+    def upsert(self, employee_id, skill_id, rating_type, defaults):
+        """
+        Create or update the rating row for a given employee-skill-type.
+        Returns (instance, created).
+        """
+        return self.model.objects.update_or_create(
+            employee_id=employee_id,
+            skill_id=skill_id,
+            rating_type=rating_type,
+            defaults=defaults,
+        )
+
+
+class EmployeeSkillRatingHistoryRepository(BaseRepository[EmployeeSkillRatingHistory]):
+    model = EmployeeSkillRatingHistory
+
+    def get_for_employee(self, employee_id, rating_type=None, skill_id=None):
+        """
+        Fetch history rows for an employee, optionally filtered by
+        rating_type and/or skill.
+        """
+        qs = self.filter(employee_id=employee_id)
+        if rating_type:
+            qs = qs.filter(rating_type=rating_type)
+        if skill_id:
+            qs = qs.filter(skill_id=skill_id)
+        return qs.order_by("-changed_at")
 
 

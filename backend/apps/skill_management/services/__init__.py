@@ -6,5 +6,7 @@ from .skill_service import (
     JobRoleSkillService,
     EmployeeSkillService,
     EmployeeSkillHistoryService,
-    EmployeeSkillAssessmentService
+    EmployeeSkillAssessmentService,
 )
+from .self_rating_service import SelfRatingService
+from .manager_rating_service import ManagerRatingService

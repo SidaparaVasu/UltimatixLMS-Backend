@@ -6,5 +6,7 @@ from .skill_repository import (
     JobRoleSkillRepository,
     EmployeeSkillRepository,
     EmployeeSkillHistoryRepository,
-    EmployeeSkillAssessmentRepository
+    EmployeeSkillAssessmentRepository,
+    EmployeeSkillRatingRepository,
+    EmployeeSkillRatingHistoryRepository,
 )

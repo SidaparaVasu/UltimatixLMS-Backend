@@ -40,7 +40,7 @@ class TNIApprovalService(BaseService):
             pk=approval_id,
             approval_status=status,
             comments=comments,
-            approved_at=timezone.now()
+            actioned_at=timezone.now()
         )
 
         # Update parent training need

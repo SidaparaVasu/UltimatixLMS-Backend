@@ -35,8 +35,8 @@ class ComplianceRequirementAdmin(admin.ModelAdmin):
 
 @admin.register(TrainingNeedApproval)
 class TrainingNeedApprovalAdmin(admin.ModelAdmin):
-    list_display = ("training_need", "approver", "approval_status", "approved_at")
-    list_filter = ("approval_status", "approved_at")
+    list_display = ("training_need", "approver", "approval_status", "actioned_at")
+    list_filter = ("approval_status", "actioned_at")
     search_fields = ("training_need__employee__employee_code", "approver__employee_code")
 
 

@@ -181,10 +181,10 @@ class TrainingNeedApproval(models.Model):
         default="",
         help_text="Remarks by the approver."
     )
-    approved_at = models.DateTimeField(
+    actioned_at = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="Timestamp when the action was finalized."
+        help_text="Timestamp when the approval action was finalized (approve or reject)."
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -45,6 +45,7 @@ class TrainingNeedApprovalSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrainingNeedApproval
         fields = "__all__"
+        # actioned_at replaces the old approved_at field (renamed in migration 0005)
 
 
 class CourseRecommendationSerializer(serializers.ModelSerializer):

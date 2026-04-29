@@ -2,6 +2,27 @@ from django.db import models
 from apps.org_management.models import JobRoleMaster, EmployeeMaster
 
 
+# ---------------------------------------------------------------------------
+# Choices
+# ---------------------------------------------------------------------------
+
+class SkillIdentifiedBy(models.TextChoices):
+    SELF       = "SELF",       "Self"
+    MANAGER    = "MANAGER",    "Manager"
+    SYSTEM     = "SYSTEM",     "System"
+    ASSESSMENT = "ASSESSMENT", "Assessment"
+
+
+class SkillRatingType(models.TextChoices):
+    SELF    = "SELF",    "Self"
+    MANAGER = "MANAGER", "Manager"
+
+
+class SkillRatingStatus(models.TextChoices):
+    DRAFT     = "DRAFT",     "Draft"
+    SUBMITTED = "SUBMITTED", "Submitted"
+
+
 class SkillCategoryMaster(models.Model):
     """
     Stores high-level skill categories used for organizing skills.
@@ -187,7 +208,9 @@ class JobRoleSkillRequirement(models.Model):
 
 class EmployeeSkill(models.Model):
     """
-    Stores current actual skill proficiency levels for employees.
+    Stores the current finalized skill proficiency level for an employee.
+    This is the authoritative record — updated whenever a manager submits
+    their rating or the assessment engine produces a result.
     """
     employee = models.ForeignKey(
         EmployeeMaster,
@@ -202,6 +225,12 @@ class EmployeeSkill(models.Model):
     current_level = models.ForeignKey(
         SkillLevelMaster,
         on_delete=models.PROTECT
+    )
+    identified_by = models.CharField(
+        max_length=20,
+        choices=SkillIdentifiedBy.choices,
+        default=SkillIdentifiedBy.SELF,
+        help_text="Who last set the current proficiency level."
     )
     is_active = models.BooleanField(
         default=True
@@ -301,3 +330,178 @@ class EmployeeSkillAssessment(models.Model):
         return f"{self.employee.employee_code} - {self.skill.skill_name} Score: {self.score}"
 
 
+
+class EmployeeSkillRating(models.Model):
+    """
+    Staging model for the TNI rating cycle.
+
+    Holds one active row per [employee, skill, rating_type] — the current
+    in-progress or submitted rating for the ongoing cycle.
+
+    History is preserved automatically via the post_save signal which writes
+    every change to EmployeeSkillRatingHistory before the row is overwritten.
+
+    Cycle reset: when a new TNI cycle starts the service updates this row
+    (status → DRAFT, new level). The signal fires first, archiving the old
+    state, so no data is lost across cycles.
+    """
+    employee = models.ForeignKey(
+        EmployeeMaster,
+        on_delete=models.CASCADE,
+        related_name="skill_ratings"
+    )
+    skill = models.ForeignKey(
+        SkillMaster,
+        on_delete=models.CASCADE,
+        related_name="employee_ratings"
+    )
+    rated_by = models.ForeignKey(
+        EmployeeMaster,
+        on_delete=models.CASCADE,
+        related_name="given_skill_ratings",
+        help_text="The person who performed the rating (employee for SELF, manager for MANAGER)."
+    )
+    rating_type = models.CharField(
+        max_length=10,
+        choices=SkillRatingType.choices,
+        help_text="Whether this is a self-rating or a manager-identified rating."
+    )
+    rated_level = models.ForeignKey(
+        SkillLevelMaster,
+        on_delete=models.PROTECT,
+        help_text="The proficiency level assigned in this rating."
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=SkillRatingStatus.choices,
+        default=SkillRatingStatus.DRAFT
+    )
+    submitted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when the rating was submitted. Null while in DRAFT."
+    )
+    # SELF-type fields
+    observations = models.TextField(
+        blank=True,
+        default="",
+        help_text="Observed performance hindrances (used for SELF ratings)."
+    )
+    accomplishments = models.TextField(
+        blank=True,
+        default="",
+        help_text="Recent accomplishments (used for SELF ratings)."
+    )
+    # MANAGER-type fields
+    notes = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Reviewer notes (used for MANAGER ratings)."
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "employee_skill_rating"
+        unique_together = ["employee", "skill", "rating_type"]
+        verbose_name = "Employee Skill Rating"
+        verbose_name_plural = "Employee Skill Ratings"
+        ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["employee"], name="idx_skill_rating_employee_id"),
+            models.Index(fields=["skill"],    name="idx_skill_rating_skill_id"),
+            models.Index(fields=["status"],   name="idx_skill_rating_status"),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.employee.employee_code} - {self.skill.skill_name} "
+            f"[{self.rating_type}] ({self.status})"
+        )
+
+
+class EmployeeSkillRatingHistory(models.Model):
+    """
+    Append-only audit log for EmployeeSkillRating changes.
+
+    Written automatically by the post_save signal on EmployeeSkillRating
+    every time a row is created or updated (level change, status change,
+    notes update). Never modified after creation.
+
+    Answers historical queries such as:
+      - "What did John self-rate Python in April 2026?"
+      - "What did his manager identify in October 2026?"
+    """
+    employee = models.ForeignKey(
+        EmployeeMaster,
+        on_delete=models.CASCADE,
+        related_name="skill_rating_history"
+    )
+    skill = models.ForeignKey(
+        SkillMaster,
+        on_delete=models.CASCADE,
+        related_name="rating_history"
+    )
+    rating_type = models.CharField(
+        max_length=10,
+        choices=SkillRatingType.choices
+    )
+    rated_by = models.ForeignKey(
+        EmployeeMaster,
+        on_delete=models.CASCADE,
+        related_name="given_rating_history"
+    )
+    old_level = models.ForeignKey(
+        SkillLevelMaster,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="rating_old_history",
+        help_text="Level before this change. Null on first creation."
+    )
+    new_level = models.ForeignKey(
+        SkillLevelMaster,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="rating_new_history",
+        help_text="Level after this change."
+    )
+    old_status = models.CharField(
+        max_length=10,
+        blank=True,
+        default="",
+        help_text="Status before this change."
+    )
+    new_status = models.CharField(
+        max_length=10,
+        help_text="Status after this change."
+    )
+    notes_snapshot = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Snapshot of notes/observations at the time of this change."
+    )
+    changed_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Timestamp when this history entry was recorded."
+    )
+
+    class Meta:
+        db_table = "employee_skill_rating_history"
+        verbose_name = "Employee Skill Rating History"
+        verbose_name_plural = "Employee Skill Rating Histories"
+        ordering = ["-changed_at"]
+        indexes = [
+            models.Index(fields=["employee"],    name="idx_skill_rating_hist_emp"),
+            models.Index(fields=["skill"],       name="idx_skill_rating_hist_skill"),
+            models.Index(fields=["rating_type"], name="idx_skill_rating_hist_type"),
+            models.Index(fields=["changed_at"],  name="idx_skill_rating_hist_date"),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.employee.employee_code} - {self.skill.skill_name} "
+            f"[{self.rating_type}] changed at {self.changed_at}"
+        )

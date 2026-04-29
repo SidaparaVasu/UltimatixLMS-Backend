@@ -7,7 +7,8 @@ from .models import (
     JobRoleSkillRequirement,
     EmployeeSkill,
     EmployeeSkillHistory,
-    EmployeeSkillAssessment
+    EmployeeSkillAssessment,
+    EmployeeSkillRating
 )
 
 
@@ -70,3 +71,8 @@ class EmployeeSkillAssessmentAdmin(admin.ModelAdmin):
     list_filter = ("result_level", "assessed_at")
 
 
+@admin.register(EmployeeSkillRating)
+class EmployeeSkillRatingAdmin(admin.ModelAdmin):
+    list_display = ("employee", "skill", "rated_by", "rating_type", "rated_level", "status", "submitted_at")
+    search_fields = ("skill", "skill__skill_name")
+    list_filter = ("rating_type", "rated_level", "submitted_at", "status")

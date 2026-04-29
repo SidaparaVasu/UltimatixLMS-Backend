@@ -228,6 +228,9 @@ export const TrainingNeedApprovalDialog: React.FC<TrainingNeedApprovalDialogProp
             }}
             style={{
               resize: 'vertical',
+              height: 'auto',
+              minHeight: '72px',
+              padding: 'var(--space-2) var(--space-3)',
               borderColor: commentsRequired ? 'var(--color-danger)' : undefined,
             }}
           />

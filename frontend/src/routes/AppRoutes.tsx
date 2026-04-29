@@ -33,6 +33,8 @@ const CourseCatalogPage = lazy(() => import('@/pages/learner/CourseCatalogPage')
 const CourseDetailPage = lazy(() => import('@/pages/learner/CourseDetailPage'));
 const MyLearningPage = lazy(() => import('@/pages/learner/MyLearningPage'));
 const CoursePlayerPage = lazy(() => import('@/pages/learner/CoursePlayerPage'));
+const SelfTNIRatingPage = lazy(() => import('@/pages/learner/SelfTNIRatingPage'));
+const MySkillMatrixPage = lazy(() => import('@/pages/learner/MySkillMatrixPage'));
 
 // Placeholder for pages that are not yet implemented
 const ComingSoon = () => (
@@ -113,6 +115,8 @@ export const AppRoutes = () => {
               <Route path="/courses/:id" element={<CourseDetailPage />} />
               <Route path="/my-learning" element={<MyLearningPage />} />
               <Route path="/learn/:enrollmentId" element={<CoursePlayerPage />} />
+              <Route path="/my-tni" element={<SelfTNIRatingPage />} />
+              <Route path="/my-skills" element={<MySkillMatrixPage />} />
 
               {/* Coming Soon Routes */}
               <Route path="/skills" element={<ComingSoon />} />

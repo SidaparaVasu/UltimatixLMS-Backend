@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { TrainingNeed, TNIApprovalStatus } from '@/types/tni.types';
-import { SkillGapBadge } from './SkillGapBadge';
 
 interface TrainingNeedApprovalDialogProps {
   open: boolean;
@@ -76,71 +75,50 @@ export const TrainingNeedApprovalDialog: React.FC<TrainingNeedApprovalDialogProp
       description="Approve or reject this identified training need."
       maxWidth="520px"
       footer={
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: 'var(--space-3)',
-          }}
-        >
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
           <button
             onClick={onClose}
             disabled={isLoading}
             style={{
-              padding: '8px 16px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--color-border)',
-              background: 'var(--color-surface)',
-              color: 'var(--color-text-primary)',
-              fontSize: '13px',
-              fontWeight: 500,
-              cursor: 'pointer',
+              padding: '8px 16px', borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+              color: 'var(--color-text-primary)', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
             }}
           >
-            Cancel
+            {trainingNeed.status === 'PENDING' ? 'Cancel' : 'Close'}
           </button>
-          <button
-            onClick={() => handleAction('REJECTED')}
-            disabled={isLoading}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--color-danger)',
-              background: 'transparent',
-              color: 'var(--color-danger)',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              opacity: isLoading ? 0.6 : 1,
-            }}
-          >
-            <XCircle size={14} strokeWidth={2} />
-            Reject
-          </button>
-          <button
-            onClick={() => handleAction('APPROVED')}
-            disabled={isLoading}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 16px',
-              borderRadius: 'var(--radius-md)',
-              border: 'none',
-              background: 'var(--color-success)',
-              color: 'white',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              opacity: isLoading ? 0.6 : 1,
-            }}
-          >
-            <CheckCircle size={14} strokeWidth={2} />
-            {isLoading ? 'Processing…' : 'Approve'}
-          </button>
+          {trainingNeed.status === 'PENDING' && (
+            <>
+              <button
+                onClick={() => handleAction('REJECTED')}
+                disabled={isLoading}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '8px 16px', borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-danger)', background: 'transparent',
+                  color: 'var(--color-danger)', fontSize: '13px', fontWeight: 600,
+                  cursor: 'pointer', opacity: isLoading ? 0.6 : 1,
+                }}
+              >
+                <XCircle size={14} strokeWidth={2} />
+                Reject
+              </button>
+              <button
+                onClick={() => handleAction('APPROVED')}
+                disabled={isLoading}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '8px 16px', borderRadius: 'var(--radius-md)',
+                  border: 'none', background: 'var(--color-success)',
+                  color: 'white', fontSize: '13px', fontWeight: 600,
+                  cursor: 'pointer', opacity: isLoading ? 0.6 : 1,
+                }}
+              >
+                <CheckCircle size={14} strokeWidth={2} />
+                {isLoading ? 'Processing…' : 'Approve'}
+              </button>
+            </>
+          )}
         </div>
       }
     >
@@ -149,13 +127,13 @@ export const TrainingNeedApprovalDialog: React.FC<TrainingNeedApprovalDialogProp
         {/* ── Summary card ─────────────────────────────────────────── */}
         <div
           style={{
-            background: 'var(--color-surface-alt)',
             border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-md)',
             padding: 'var(--space-4)',
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 'var(--space-3)',
+            display: 'flex',
+            justifyContent: 'start',
+            flexDirection: 'column',
+            gap: 'var(--space-2)',
           }}
         >
           <Field label="Employee" value={trainingNeed.employee_name || trainingNeed.employee_code} />
@@ -163,23 +141,45 @@ export const TrainingNeedApprovalDialog: React.FC<TrainingNeedApprovalDialogProp
           <Field
             label="Priority"
             value={
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: priority.color,
-                  background: priority.bg,
-                }}
-              >
+              <span style={{ fontSize: '11px', fontWeight: 700, color: priority.color }}>
                 {priority.label}
               </span>
             }
           />
           <Field label="Source" value={sourceLabel} />
+          {(trainingNeed.current_level_name || trainingNeed.required_level_name) && (
+            <Field
+              label="Skill Level"
+              value={
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{
+                    fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px',
+                    background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)',
+                    border: '1px solid var(--color-border)',
+                  }}>
+                    {trainingNeed.current_level_name ?? 'Not rated'}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>→</span>
+                  <span style={{
+                    fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px',
+                    background: 'rgba(37,99,235,0.08)', color: '#2563eb',
+                    border: '1px solid rgba(37,99,235,0.20)',
+                  }}>
+                    {trainingNeed.required_level_name ?? '—'}
+                  </span>
+                  {trainingNeed.gap_value != null && trainingNeed.gap_value > 0 && (
+                    <span style={{
+                      fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
+                      background: trainingNeed.gap_value >= 2 ? 'rgba(220,38,38,0.10)' : 'rgba(217,119,6,0.10)',
+                      color: trainingNeed.gap_value >= 2 ? '#dc2626' : '#b45309',
+                    }}>
+                      {trainingNeed.gap_value >= 2 ? '▼▼' : '▼'} {trainingNeed.gap_value} level{trainingNeed.gap_value !== 1 ? 's' : ''} below
+                    </span>
+                  )}
+                </span>
+              }
+            />
+          )}
         </div>
 
         {/* ── Notes from system ────────────────────────────────────── */}
@@ -202,39 +202,37 @@ export const TrainingNeedApprovalDialog: React.FC<TrainingNeedApprovalDialogProp
           </div>
         )}
 
-        {/* ── Comments ─────────────────────────────────────────────── */}
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label
-            className="form-label"
-            style={{
-              color: commentsRequired ? 'var(--color-danger)' : undefined,
-            }}
-          >
-            Comments
-            {commentsRequired && (
-              <span style={{ color: 'var(--color-danger)', marginLeft: '4px' }}>
-                — required when rejecting
-              </span>
-            )}
-          </label>
-          <textarea
-            className="form-input"
-            rows={3}
-            placeholder="Add remarks or justification…"
-            value={comments}
-            onChange={e => {
-              setComments(e.target.value);
-              if (pendingAction) setPendingAction(null);
-            }}
-            style={{
-              resize: 'vertical',
-              height: 'auto',
-              minHeight: '72px',
-              padding: 'var(--space-2) var(--space-3)',
-              borderColor: commentsRequired ? 'var(--color-danger)' : undefined,
-            }}
-          />
-        </div>
+        {/* ── Comments — only shown when PENDING ───────────────────── */}
+        {trainingNeed.status === 'PENDING' && (
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label
+              className="form-label"
+              style={{ color: commentsRequired ? 'var(--color-danger)' : undefined }}
+            >
+              Comments
+              {commentsRequired && (
+                <span style={{ color: 'var(--color-danger)', marginLeft: '4px' }}>
+                  — required when rejecting
+                </span>
+              )}
+            </label>
+            <textarea
+              className="form-input"
+              rows={3}
+              placeholder="Add remarks or justification…"
+              value={comments}
+              onChange={e => {
+                setComments(e.target.value);
+                if (pendingAction) setPendingAction(null);
+              }}
+              style={{
+                resize: 'vertical', height: 'auto', minHeight: '72px',
+                padding: 'var(--space-2) var(--space-3)',
+                borderColor: commentsRequired ? 'var(--color-danger)' : undefined,
+              }}
+            />
+          </div>
+        )}
       </div>
     </Dialog>
   );
@@ -243,26 +241,25 @@ export const TrainingNeedApprovalDialog: React.FC<TrainingNeedApprovalDialogProp
 /* ── Internal helper ─────────────────────────────────────────────────────── */
 const Field: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
   <div>
-    <p
+    <div
       style={{
         margin: '0 0 2px',
-        fontSize: '10px',
+        fontSize: '13px',
         fontWeight: 700,
-        textTransform: 'uppercase',
-        letterSpacing: '0.06em',
         color: 'var(--color-text-muted)',
       }}
     >
-      {label}
-    </p>
-    <div
-      style={{
-        fontSize: '13px',
-        fontWeight: 500,
-        color: 'var(--color-text-primary)',
-      }}
-    >
-      {value}
+      {label}: 
+      <span
+        style={{
+          marginLeft: '5px', 
+          fontSize: '13px',
+          fontWeight: 500,
+          color: 'var(--color-text-primary)',
+        }}
+      >
+        {value}
+      </span>
     </div>
   </div>
 );

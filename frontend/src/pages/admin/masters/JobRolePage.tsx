@@ -23,6 +23,7 @@ import {
 import { Dialog } from "@/components/ui/dialog";
 import { CellScrollArea } from "@/components/ui/cell-scroll-area";
 import { SkillTag } from "@/components/ui/skill-tag";
+import { TableCell } from "@/components/ui/table";
 import {
   UnifiedSkillMappingModal,
   SkillMappingEntry,
@@ -52,41 +53,37 @@ const buildColumns = (
   { 
     type: "custom", 
     header: "Designation", 
-    cellStyle: { fontWeight: 600, color: "var(--color-text-primary)" },
     render: (role) => (
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <span style={{ fontSize: '14px' }}>{role.job_role_name}</span>
-        <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>{role.job_role_code}</span>
-      </div>
+      <TableCell>
+        <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)', whiteSpace: 'nowrap' }}>
+          {role.job_role_name}
+        </p>
+        <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
+          {role.job_role_code}
+        </p>
+      </TableCell>
     )
   },
   {
     type: "custom",
     header: "Required Skills",
     render: (role) => {
-      // Find mappings for this role
       const mapped = roleSkills.filter((rs) => rs.job_role === role.id);
       return (
-        <CellScrollArea style={{ maxWidth: "500px" }}>
-          {mapped.length === 0 ? (
-            <span
-              style={
-                {
-                  fontSize: "11px",
-                  color: "var(--color-text-muted)",
-                  italic: "true",
-                } as any
-              }
-            >
-              No skills mapped
-            </span>
-          ) : (
-            mapped.map((m) => {
-              const s = allSkills.find((sk) => sk.id === m.skill);
-              return s ? <SkillTag key={m.id} name={s.skill_name} /> : null;
-            })
-          )}
-        </CellScrollArea>
+        <TableCell>
+          <CellScrollArea style={{ maxWidth: "500px" }}>
+            {mapped.length === 0 ? (
+              <span style={{ fontSize: "11px", color: "var(--color-text-muted)", fontStyle: 'italic' }}>
+                No skills mapped
+              </span>
+            ) : (
+              mapped.map((m) => {
+                const s = allSkills.find((sk) => sk.id === m.skill);
+                return s ? <SkillTag key={m.id} name={s.skill_name} /> : null;
+              })
+            )}
+          </CellScrollArea>
+        </TableCell>
       );
     },
   },

@@ -31,6 +31,7 @@ export const SkillTag: React.FC<SkillTagProps> = ({
         borderRadius: '999px',
         fontSize: '12px',
         fontWeight: 500,
+        whiteSpace: 'nowrap',
         background: isSubSkill
           ? 'var(--color-surface-alt)'
           : 'color-mix(in srgb, var(--color-accent) 10%, transparent)',
@@ -42,7 +43,11 @@ export const SkillTag: React.FC<SkillTagProps> = ({
       }}
     >
       {isSubSkill && <span style={{ opacity: 0.5 }}>↳</span>}
-      <span>{name}</span>
+      <span style={{
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        maxWidth: '160px',
+      }} title={name}>{name}</span>
       {onRemove && (
         <button
           onClick={(e) => {

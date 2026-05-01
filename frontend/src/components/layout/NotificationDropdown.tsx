@@ -10,7 +10,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BellOff, ArrowRight, Loader2 } from 'lucide-react';
+import { BellOff, ArrowRight } from 'lucide-react';
 import { NotificationItem } from './NotificationItem';
 import {
   useNotificationList,
@@ -71,7 +71,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onCl
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
         borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-lg)',
+        boxShadow: '0 4px 16px rgba(15, 22, 35, 0.05)',
         overflow: 'hidden',
         zIndex: 200,
         animation: 'ddFadeIn 140ms ease both',
@@ -146,16 +146,53 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onCl
       {/* ── Body ───────────────────────────────────────────────────── */}
       <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
         {isLoading ? (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '40px 0',
-              color: 'var(--color-text-muted)',
-            }}
-          >
-            <Loader2 size={20} className="animate-spin" />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                  padding: '12px 16px',
+                  borderBottom: i < 3 ? '1px solid var(--color-border)' : 'none',
+                }}
+              >
+                {/* Icon skeleton */}
+                <div
+                  style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: 'var(--color-canvas)',
+                    flexShrink: 0,
+                    animation: 'skeletonPulse 1.4s ease-in-out infinite',
+                  }}
+                />
+                {/* Text skeleton */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{
+                    height: 12, width: '60%', borderRadius: 4,
+                    background: 'var(--color-canvas)',
+                    animation: 'skeletonPulse 1.4s ease-in-out infinite',
+                  }} />
+                  <div style={{
+                    height: 10, width: '85%', borderRadius: 4,
+                    background: 'var(--color-canvas)',
+                    animation: 'skeletonPulse 1.4s ease-in-out infinite 0.1s',
+                  }} />
+                  <div style={{
+                    height: 9, width: '30%', borderRadius: 4,
+                    background: 'var(--color-canvas)',
+                    animation: 'skeletonPulse 1.4s ease-in-out infinite 0.2s',
+                  }} />
+                </div>
+              </div>
+            ))}
+            <style>{`
+              @keyframes skeletonPulse {
+                0%, 100% { opacity: 1; }
+                50%       { opacity: 0.4; }
+              }
+            `}</style>
           </div>
         ) : notifications.length === 0 ? (
           <div

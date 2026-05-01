@@ -21,6 +21,7 @@ import {
   GraduationCap,
   BookMarked,
   ChartNoAxesColumn,
+  Bell,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { getFullName, getInitials, getPrimaryRoleName } from "@/utils/user.utils";
@@ -69,8 +70,9 @@ const EMPLOYEE_NAV: NavSection[] = [
   {
     title: "Account",
     items: [
-      { label: "My Profile", icon: User,        path: "/profile" },
-      { label: "Security",   icon: ShieldCheck, path: "/security" },
+      { label: "Notifications", icon: Bell,        path: "/notifications" },
+      { label: "My Profile",    icon: User,        path: "/profile" },
+      { label: "Security",      icon: ShieldCheck, path: "/security" },
     ],
   },
 ];
@@ -103,8 +105,9 @@ const HR_NAV: NavSection[] = [
   {
     title: "Account",
     items: [
-      { label: "My Profile", icon: User,        path: "/profile" },
-      { label: "Security",   icon: ShieldCheck, path: "/security" },
+      { label: "Notifications", icon: Bell,        path: "/notifications" },
+      { label: "My Profile",    icon: User,        path: "/profile" },
+      { label: "Security",      icon: ShieldCheck, path: "/security" },
     ],
   },
 ];
@@ -145,6 +148,7 @@ const ADMIN_NAV: NavSection[] = [
     items: [
       { label: "Roles",           icon: ShieldCheck,   path: "/admin/roles" },
       { label: "Reports",         icon: BarChart2,     path: "/admin/reports" },
+      { label: "Notifications",   icon: Bell,          path: "/notifications" },
       { label: "Settings",        icon: Settings,      path: "/admin/settings" },
     ],
   },

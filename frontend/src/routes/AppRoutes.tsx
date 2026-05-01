@@ -41,6 +41,7 @@ const TrainingPlansPage    = lazy(() => import('@/pages/admin/training/TrainingP
 const TrainingPlanFormPage = lazy(() => import('@/pages/admin/training/TrainingPlanFormPage'));
 const TrainingCalendarPage = lazy(() => import('@/pages/admin/training/TrainingCalendarPage'));
 const ApprovalsPage        = lazy(() => import('@/pages/admin/training/ApprovalsPage'));
+const NotificationsPage    = lazy(() => import('@/pages/NotificationsPage'));
 
 // Placeholder for pages that are not yet implemented
 const ComingSoon = () => (
@@ -141,6 +142,8 @@ export const AppRoutes = () => {
               <Route path="/certifications" element={<ComingSoon />} />
               <Route path="/reports" element={<ComingSoon />} />
               <Route path="/leaderboard" element={<ComingSoon />} />
+              {/* Notifications */}
+              <Route path="/notifications" element={<NotificationsPage />} />
             </Route>
           </Route>
 

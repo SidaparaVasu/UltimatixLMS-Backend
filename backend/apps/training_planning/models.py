@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.org_management.models import EmployeeMaster, DepartmentMaster
+from apps.skill_management.models import SkillMaster
 from .constants import (
     TrainingPlanStatus, TrainingPlanPriority, TrainingApprovalStatus,
     TrainingSessionType, EnrollmentStatus, AttendanceStatus
@@ -38,6 +39,23 @@ class TrainingPlan(models.Model):
         max_length=50,
         choices=TrainingPlanStatus.choices,
         default=TrainingPlanStatus.DRAFT
+    )
+    # Extended fields (SRS)
+    training_category = models.CharField(max_length=100, blank=True, default="")
+    training_provider = models.CharField(max_length=255, blank=True, default="")
+    training_scope = models.TextField(blank=True, default="")
+    skills = models.ManyToManyField(
+        SkillMaster,
+        blank=True,
+        related_name="training_plans"
+    )
+    budget_per_employee = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    duration_hours = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -95,7 +113,8 @@ class TrainingPlanItem(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.training_plan.plan_name} - {self.course.course_title}"
+        course_title = self.course.course_title if self.course else "No Course"
+        return f"{self.training_plan.plan_name} - {course_title}"
 
 
 class TrainingPlanApproval(models.Model):
@@ -111,6 +130,13 @@ class TrainingPlanApproval(models.Model):
         EmployeeMaster,
         on_delete=models.CASCADE,
         related_name="plan_approvals"
+    )
+    submitted_by = models.ForeignKey(
+        EmployeeMaster,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="submitted_plan_approvals"
     )
     approval_status = models.CharField(
         max_length=50,
@@ -152,6 +178,14 @@ class TrainingCalendar(models.Model):
         on_delete=models.CASCADE,
         related_name="training_calendars"
     )
+    # Links calendar to the plan that owns it (nullable for ad-hoc calendars)
+    training_plan = models.ForeignKey(
+        TrainingPlan,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="calendars"
+    )
     created_by = models.ForeignKey(
         EmployeeMaster,
         on_delete=models.CASCADE
@@ -187,10 +221,15 @@ class TrainingSession(models.Model):
         on_delete=models.CASCADE,
         related_name="sessions"
     )
-    session_title = models.CharField(
-        max_length=255,
-        help_text="Batch name (e.g. Batch 1, Special Workshop)."
+    # Links session back to the specific plan item it fulfils (nullable for ad-hoc sessions)
+    training_plan_item = models.ForeignKey(
+        TrainingPlanItem,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sessions"
     )
+    session_title = models.CharField(max_length=255)
     session_type = models.CharField(
         max_length=50,
         choices=TrainingSessionType.choices,
@@ -223,6 +262,7 @@ class TrainingSession(models.Model):
             models.Index(fields=["course"], name="idx_tp_session_course_fk"),
             models.Index(fields=["calendar"], name="idx_tp_session_cal_id"),
             models.Index(fields=["session_start_date"], name="idx_tp_session_start"),
+            models.Index(fields=["training_plan_item"], name="idx_tp_session_plan_item"),
         ]
 
     def __str__(self):

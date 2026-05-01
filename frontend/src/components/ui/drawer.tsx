@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface DrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   position?: 'left' | 'right' | 'top' | 'bottom';
-  size?: string; // width for left/right, height for top/bottom
+  size?: string;
   title?: string;
   description?: string;
   children: React.ReactNode;
@@ -29,7 +30,6 @@ export const Drawer = ({
   fullScreen = false,
 }: DrawerProps) => {
   
-  // Prevent body scroll when drawer is open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
@@ -48,10 +48,10 @@ export const Drawer = ({
         ? { width: size, maxWidth: '100vw' } 
         : { height: size, maxHeight: '100vh' };
 
-  return (
+  return createPortal(
     <div 
       className={`drawer-overlay anim ${className || ''}`} 
-      style={{ animationDuration: '200ms', zIndex: fullScreen ? 100 : 50 }}
+      style={{ animationDuration: '200ms', zIndex: fullScreen ? 9999 : 9998 }}
       onClick={() => !fullScreen && onOpenChange(false)}
     >
       <div 
@@ -91,6 +91,7 @@ export const Drawer = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

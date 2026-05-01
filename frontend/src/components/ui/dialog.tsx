@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface DialogProps {
@@ -20,7 +21,6 @@ export const Dialog = ({
   footer,
   maxWidth = '500px' 
 }: DialogProps) => {
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
@@ -32,16 +32,16 @@ export const Dialog = ({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div 
       className="dialog-overlay anim"
-      style={{ animationDuration: '200ms' }}
+      style={{ animationDuration: '200ms', zIndex: 9999 }}
       onClick={() => onOpenChange(false)}
     >
       <div 
         className="dialog-content anim delay-1"
         style={{ maxWidth, animationDuration: '300ms', transformOrigin: 'center' }}
-        onClick={e => e.stopPropagation()} // Prevent close when clicking inside
+        onClick={e => e.stopPropagation()}
       >
         <div className="dialog-header">
           <div>
@@ -67,6 +67,7 @@ export const Dialog = ({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

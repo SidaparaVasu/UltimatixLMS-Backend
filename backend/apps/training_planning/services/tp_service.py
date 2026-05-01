@@ -45,12 +45,10 @@ class TrainingPlanApprovalService(BaseService):
 
     @transaction.atomic
     def process_approval(self, approval_id, status, comments):
-        """Finalizes training strategy approval and updates plan status."""
         approval = self.repository.get_by_id(approval_id)
         if not approval:
             return None
 
-        # Update record
         self.repository.update(
             pk=approval_id,
             approval_status=status,
@@ -58,12 +56,17 @@ class TrainingPlanApprovalService(BaseService):
             approved_at=timezone.now()
         )
 
-        # Update parent plan
+        # Update parent plan status
         plan_repo = TrainingPlanRepository()
-        new_plan_status = TrainingPlanStatus.APPROVED if status == TrainingApprovalStatus.APPROVED else TrainingPlanStatus.DRAFT
+        new_plan_status = (
+            TrainingPlanStatus.APPROVED
+            if status == TrainingApprovalStatus.APPROVED
+            else TrainingPlanStatus.DRAFT
+        )
         plan_repo.update(pk=approval.training_plan_id, status=new_plan_status)
 
-        return approval
+        # Return refreshed instance
+        return self.repository.get_by_id(approval_id)
 
 
 class TrainingCalendarService(BaseService):

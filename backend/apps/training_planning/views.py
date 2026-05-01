@@ -113,6 +113,33 @@ class TrainingPlanViewSet(BaseTPViewSet):
             data=self.get_serializer(instance).data
         )
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        partial = kwargs.pop('partial', False)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        new_status = serializer.validated_data.get('status')
+
+        # When plan is submitted for approval, auto-create a TrainingPlanApproval record
+        if new_status == 'PENDING_APPROVAL' and instance.status != 'PENDING_APPROVAL':
+            employee = self._get_employee(request)
+            TrainingPlanApproval.objects.get_or_create(
+                training_plan=instance,
+                approval_status='PENDING',
+                defaults={
+                    'approver': employee or instance.created_by,
+                    'submitted_by': employee,
+                    'comments': '',
+                }
+            )
+
+        updated = self.service_class().update(pk=instance.pk, **serializer.validated_data)
+        return success_response(
+            message="Training Plan updated successfully.",
+            data=self.get_serializer(updated).data
+        )
+
 
 class TrainingPlanItemViewSet(BaseTPViewSet):
     queryset = TrainingPlanItem.objects.all()
@@ -129,19 +156,61 @@ class TrainingPlanApprovalViewSet(BaseTPViewSet):
     model = TrainingPlanApproval
     required_permission = "PLAN_APPROVE"
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        training_plan = self.request.query_params.get('training_plan')
+        approval_status = self.request.query_params.get('approval_status')
+        if training_plan:
+            qs = qs.filter(training_plan_id=training_plan)
+        if approval_status:
+            qs = qs.filter(approval_status=approval_status)
+        return qs.order_by('-created_at')
+
     @action(detail=True, methods=["post"], url_path="finalize")
     def finalize(self, request, pk=None):
-        """Finalize the strategy approval process for a specific planning window."""
         status_val = request.data.get("status")
         comments = request.data.get("comments", "")
-        
+
         updated_approval = self.service_class().process_approval(
-            approval_id=pk, 
-            status=status_val, 
+            approval_id=pk,
+            status=status_val,
             comments=comments
         )
+
+        if not updated_approval:
+            return error_response(message="Approval record not found.")
+
         return success_response(
-            message="Training Plan strategy status updated.",
+            message="Training Plan approval status updated.",
+            data=self.get_serializer(updated_approval).data
+        )
+
+    @action(detail=False, methods=["post"], url_path="finalize-by-plan")
+    def finalize_by_plan(self, request):
+        """Finalize the pending approval for a given plan ID."""
+        plan_id   = request.data.get("plan_id")
+        status_val = request.data.get("status")
+        comments  = request.data.get("comments", "")
+
+        if not plan_id:
+            return error_response(message="plan_id is required.")
+
+        approval = TrainingPlanApproval.objects.filter(
+            training_plan_id=plan_id,
+            approval_status='PENDING'
+        ).first()
+
+        if not approval:
+            return error_response(message="No pending approval found for this plan.")
+
+        updated_approval = self.service_class().process_approval(
+            approval_id=approval.id,
+            status=status_val,
+            comments=comments
+        )
+
+        return success_response(
+            message="Training Plan approval status updated.",
             data=self.get_serializer(updated_approval).data
         )
 

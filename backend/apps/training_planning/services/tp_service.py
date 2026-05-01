@@ -110,3 +110,19 @@ class TrainingSessionEnrollmentService(BaseService):
 
 class TrainingAttendanceService(BaseService):
     repository_class = TrainingAttendanceRepository
+
+    @transaction.atomic
+    def bulk_upsert(self, training_session_id, records):
+        """
+        Create or update attendance records for a session.
+        records: list of {employee_id, attendance_status}
+        """
+        results = []
+        for record in records:
+            obj, _ = self.repository.model.objects.update_or_create(
+                training_session_id=training_session_id,
+                employee_id=record['employee'],
+                defaults={'attendance_status': record['attendance_status']},
+            )
+            results.append(obj)
+        return results

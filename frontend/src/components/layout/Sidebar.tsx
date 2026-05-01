@@ -54,7 +54,7 @@ const EMPLOYEE_NAV: NavSection[] = [
   {
     title: "Training",
     items: [
-      { label: "Training Calendar", icon: Calendar,     path: "/calendar" },
+      { label: "Training Calendar", icon: Calendar,     path: "/training-calendar" },
       { label: "Assessments",       icon: CheckSquare,  path: "/assessments", badge: null },
       { label: "Certifications",    icon: Award,        path: "/certifications" },
     ],
@@ -88,7 +88,7 @@ const HR_NAV: NavSection[] = [
     items: [
       { label: "Courses",         icon: BookOpen,        path: "/courses" },
       { label: "Enrollments",     icon: BookMarked,      path: "/my-learning" },
-      { label: "Training Calendar", icon: Calendar,      path: "/calendar" },
+      { label: "Training Calendar", icon: Calendar,     path: "/training-calendar" },
       { label: "Certifications",  icon: Award,           path: "/certifications" },
     ],
   },
@@ -133,6 +133,12 @@ const ADMIN_NAV: NavSection[] = [
       { label: "Courses",                  icon: BookOpen,      path: "/admin/courses" },
       { label: "Course Categories",               icon: BookMarked,    path: "/admin/course-categories" },
       { label: "Competencies & Skills",    icon: GraduationCap, path: "/admin/competency" },
+    ],
+  },
+  {
+    title: "Training",
+    items: [
+      { label: "Training Calendar", icon: Calendar,     path: "/admin/training-calendar" },
     ],
   },
   {

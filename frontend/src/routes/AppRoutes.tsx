@@ -132,9 +132,11 @@ export const AppRoutes = () => {
               <Route path="/my-skills" element={<MySkillMatrixPage />} />
               <Route path="/manager/tni" element={<ManagerTNIRatingPage />} />
 
+              {/* Training Calendar */}
+              <Route path="/training-calendar" element={<TrainingCalendarPage />} />
+
               {/* Coming Soon Routes */}
               <Route path="/skills" element={<ComingSoon />} />
-              <Route path="/calendar" element={<ComingSoon />} />
               <Route path="/assessments" element={<ComingSoon />} />
               <Route path="/certifications" element={<ComingSoon />} />
               <Route path="/reports" element={<ComingSoon />} />

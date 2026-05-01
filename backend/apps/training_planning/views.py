@@ -222,3 +222,22 @@ class TrainingAttendanceViewSet(BaseTPViewSet):
     service_class = TrainingAttendanceService
     model = TrainingAttendance
     required_permission = "SESSION_MANAGE"
+
+    @action(detail=False, methods=["post"], url_path="bulk-upsert")
+    def bulk_upsert(self, request):
+        training_session_id = request.data.get("training_session")
+        records = request.data.get("records", [])
+
+        if not training_session_id:
+            return error_response(message="training_session is required.")
+        if not isinstance(records, list):
+            return error_response(message="records must be a list.")
+
+        results = self.service_class().bulk_upsert(
+            training_session_id=training_session_id,
+            records=records,
+        )
+        return success_response(
+            message="Attendance saved successfully.",
+            data=self.get_serializer(results, many=True).data,
+        )

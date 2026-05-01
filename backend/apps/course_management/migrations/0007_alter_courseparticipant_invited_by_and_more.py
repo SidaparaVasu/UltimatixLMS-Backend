@@ -22,8 +22,32 @@ class Migration(migrations.Migration):
             name='notification_sent',
             field=models.BooleanField(db_column='invite_acknowledged', default=False, help_text='Whether an invitation email has been dispatched. Will be set to True once the notification module is active.'),
         ),
-        # The unique constraint already exists in the DB from the original table
-        # creation. Use SeparateDatabaseAndState to update Django's state only.
+        # The unique constraint name Django generates is:
+        # course_participant_course_id_employee_id_a13233eb_uniq
+        # On existing DBs this already exists; on fresh DBs it doesn't.
+        # RunSQL with a conditional handles both cases without error.
+        migrations.RunSQL(
+            sql="""
+                SET @idx_exists = (
+                    SELECT COUNT(*)
+                    FROM information_schema.TABLE_CONSTRAINTS
+                    WHERE CONSTRAINT_SCHEMA = DATABASE()
+                      AND TABLE_NAME = 'course_participant'
+                      AND CONSTRAINT_NAME = 'course_participant_course_id_employee_id_a13233eb_uniq'
+                      AND CONSTRAINT_TYPE = 'UNIQUE'
+                );
+                SET @sql = IF(
+                    @idx_exists = 0,
+                    'ALTER TABLE course_participant ADD UNIQUE KEY course_participant_course_id_employee_id_a13233eb_uniq (course_id, employee_id)',
+                    'SELECT 1'
+                );
+                PREPARE stmt FROM @sql;
+                EXECUTE stmt;
+                DEALLOCATE PREPARE stmt;
+            """,
+            reverse_sql=migrations.RunSQL.noop,
+        ),
+        # Update Django's internal state to match
         migrations.SeparateDatabaseAndState(
             database_operations=[],
             state_operations=[

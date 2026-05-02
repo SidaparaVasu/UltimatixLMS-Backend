@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.db.models import Count
 from .models import (
     CourseCategoryMaster,
     CourseMaster,
@@ -87,6 +88,8 @@ class CourseMasterSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.category_name", read_only=True)
     author_name = serializers.CharField(source="created_by.user.get_full_name", read_only=True)
     participant_count = serializers.SerializerMethodField()
+    total_sections = serializers.SerializerMethodField()
+    total_lessons = serializers.SerializerMethodField()
 
     class Meta:
         model = CourseMaster
@@ -95,12 +98,21 @@ class CourseMasterSerializer(serializers.ModelSerializer):
             "description", "difficulty_level", "estimated_duration_hours",
             "start_date", "end_date", "show_marks_to_learners",
             "status", "created_by", "author_name", "is_active",
-            "participant_count", "created_at", "updated_at",
+            "participant_count", "total_sections", "total_lessons",
+            "created_at", "updated_at",
         )
         read_only_fields = ("course_code", "created_by", "created_at", "updated_at")
 
     def get_participant_count(self, obj) -> int:
         return obj.participants.count()
+
+    def get_total_sections(self, obj) -> int:
+        total_sections = CourseSection.objects.filter(course_id=obj.id).count()
+        return total_sections
+
+    def get_total_lessons(self, obj) -> int:
+        total_lessons = CourseLesson.objects.filter(section__course_id=obj.id).count()
+        return total_lessons
 
     def validate_status(self, new_status):
         """Enforce the status state machine on updates."""

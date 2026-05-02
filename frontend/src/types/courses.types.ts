@@ -39,6 +39,8 @@ export interface CourseMaster {
   tags?: CourseTagMap[];
   skills?: CourseSkillMapping[];
   resources?: CourseResource[];
+  total_sections?: number;
+  total_lessons?: number;
 }
 
 export interface CourseResource {

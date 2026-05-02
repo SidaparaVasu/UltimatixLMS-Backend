@@ -108,8 +108,8 @@ export const CourseListCard: React.FC<CourseListCardProps> = ({
 }) => {
   const diffStyle   = DIFFICULTY_STYLE[course.difficulty_level ?? ''] ?? DIFFICULTY_STYLE.BEGINNER;
   const statusStyle = STATUS_STYLE[course.status] ?? STATUS_STYLE.DRAFT;
-  const sectionCount = course.sections?.length ?? 0;
-  const lessonCount  = course.sections?.reduce((acc, s) => acc + (s.lessons?.length ?? 0), 0) ?? 0;
+  const sectionCount = course.total_sections;
+  const lessonCount  = course.total_lessons;
 
   return (
     <div
@@ -163,8 +163,8 @@ export const CourseListCard: React.FC<CourseListCardProps> = ({
         {/* Row 3: Stats */}
         <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <Stat icon={Clock}      value={course.estimated_duration_hours} label="hrs" />
-          <Stat icon={LayoutList} value={sectionCount} label="sections" />
-          <Stat icon={FileText}   value={lessonCount}  label="lessons" />
+          <Stat icon={LayoutList} value={sectionCount ?? 0} label="sections" />
+          <Stat icon={FileText}   value={lessonCount ?? 0}  label="lessons" />
           {categoryName && <Stat icon={BookOpen} value={categoryName} />}
         </div>
 

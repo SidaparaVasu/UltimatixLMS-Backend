@@ -104,7 +104,7 @@ export const skillApi = {
   // Category-Skill Mappings
   getSkillMappings: async () => {
     try {
-      const response = await apiClient.get("/skills/skill-mappings/");
+      const response = await apiClient.get("/skills/skill-mappings/", { params: { page_size: 1000 } });
       return handleApiResponse<PaginatedResponse<SkillCategoryMapping>>(response.data, false);
     } catch (error) {
       return handleApiError(error);

@@ -191,6 +191,20 @@ const RoleDetailPage: React.FC = () => {
     return map;
   }, [allPerms]);
 
+  // Permission group codes the company has active subscriptions for.
+  // Derived from the user's own permission map — if a group has no permissions
+  // in the map, the company's CompanyPermissionGroup for that group is inactive
+  // or deleted, so we hide the entire group from the assignment UI.
+  const subscribedGroupCodes = useMemo(() => {
+    const codes = new Set<string>();
+    for (const perm of allPerms) {
+      if (myPermCodes.has(perm.permission_code)) {
+        codes.add(perm.group_code);
+      }
+    }
+    return codes;
+  }, [allPerms, myPermCodes]);
+
   const isReadOnly = !role || role.is_system_role;
   const canEditPerms = canUpdate && !isReadOnly;
 
@@ -574,6 +588,13 @@ const RoleDetailPage: React.FC = () => {
               .map((group) => {
                 const groupPerms = permsByGroup.get(group.group_code) ?? [];
                 if (groupPerms.length === 0) return null;
+
+                // Hide groups the company hasn't subscribed to.
+                // Superusers receive an empty permissions map ({}), so they
+                // bypass the subscription filter and see all groups.
+                const isSuperuser = myPermCodes.size === 0;
+                const isSubscribed = isSuperuser || subscribedGroupCodes.has(group.group_code);
+                if (!isSubscribed) return null;
 
                 return (
                   <div key={group.id}>

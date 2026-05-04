@@ -43,6 +43,7 @@ import {
   UnifiedSkillMappingModal,
   SkillMappingEntry,
 } from "@/components/admin/UnifiedSkillMappingModal";
+import { UserRoleAssignmentPanel } from "@/components/rbac/UserRoleAssignmentPanel";
 
 /* ─────────────────────────────────────────────────────────────
    FORM SHAPE
@@ -1092,16 +1093,20 @@ const EmployeePage: React.FC = () => {
         }}
         title="Employee Details"
         position="right"
-        size="500px"
+        size="100vw"
       >
         {viewingEmp && (
           <div
             style={{
-              display: "flex",
-              flexDirection: "column",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
               gap: "var(--space-6)",
+              alignItems: "start",
             }}
           >
+            {/* ── LEFT COLUMN: identity + org details ── */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+
             {/* Profile header */}
             <div
               style={{
@@ -1139,6 +1144,7 @@ const EmployeePage: React.FC = () => {
                     display: "flex",
                     alignItems: "center",
                     gap: "var(--space-3)",
+                    flexWrap: "wrap",
                   }}
                 >
                   {viewingEmp.firstName} {viewingEmp.lastName}
@@ -1168,98 +1174,68 @@ const EmployeePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Details sections */}
-            <div style={{ display: "grid", gap: "var(--space-5)" }}>
               <div>
                 <SectionHeader title="Personal Details" />
                 <TwoColGrid>
                   <DetailField label="Username" value={viewingEmp.username} />
                   <DetailField label="Mobile No" value={viewingEmp.mobile_no} />
-                  <DetailField
-                    label="Date of Birth"
-                    value={viewingEmp.date_of_birth}
-                  />
-                  <DetailField
-                    label="Gender"
-                    value={viewingEmp.gender}
-                    capitalize
-                  />
+                  <DetailField label="Date of Birth" value={viewingEmp.date_of_birth} />
+                  <DetailField label="Gender" value={viewingEmp.gender} capitalize />
                 </TwoColGrid>
               </div>
 
               <div>
                 <SectionHeader title="Organizational Info" />
                 <TwoColGrid>
-                  <DetailField
-                    label="Emp Code"
-                    value={viewingEmp.employeeCode}
-                  />
-                  <DetailField
-                    label="Company"
-                    value={viewingEmp.companyName || "Ultimatix Global"}
-                  />
-                  <DetailField
-                    label="Business Unit"
-                    value={viewingEmp.businessUnitName}
-                  />
-                  <DetailField
-                    label="Location"
-                    value={viewingEmp.locationName}
-                  />
-                  <DetailField
-                    label="Department"
-                    value={viewingEmp.departmentName}
-                  />
-                  <DetailField
-                    label="Designation"
-                    value={viewingEmp.jobRoleName}
-                  />
-                  <DetailField
-                    label="Joining Date"
-                    value={viewingEmp.joiningDate}
-                  />
+                  <DetailField label="Emp Code" value={viewingEmp.employeeCode} />
+                  <DetailField label="Company" value={viewingEmp.companyName || "Ultimatix Global"} />
+                  <DetailField label="Business Unit" value={viewingEmp.businessUnitName} />
+                  <DetailField label="Location" value={viewingEmp.locationName} />
+                  <DetailField label="Department" value={viewingEmp.departmentName} />
+                  <DetailField label="Designation" value={viewingEmp.jobRoleName} />
+                  <DetailField label="Joining Date" value={viewingEmp.joiningDate} />
                 </TwoColGrid>
               </div>
 
               <div>
                 <SectionHeader title="Reporting Hierarchy" />
                 <TwoColGrid>
-                  <DetailField
-                    label="Reporting Manager"
-                    value={viewingEmp.managerName || "-"}
-                  />
+                  <DetailField label="Reporting Manager" value={viewingEmp.managerName || "-"} />
                 </TwoColGrid>
               </div>
+
+            </div>{/* end LEFT COLUMN */}
+
+            {/* ── RIGHT COLUMN: roles + competency ── */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--space-5)",
+                borderLeft: "1px solid var(--color-border)",
+                paddingLeft: "var(--space-6)",
+              }}
+            >
+              <UserRoleAssignmentPanel
+                employeeId={viewingEmp.id}
+                userId={viewingEmp.user ?? null}
+              />
 
               <div>
                 <SectionHeader title="Competency Profile" />
                 {!empSkillsRes?.results?.filter(
                   (es) => es.employee === viewingEmp.id && es.is_active,
                 ).length ? (
-                  <p
-                    style={{
-                      fontSize: "13px",
-                      color: "var(--color-text-muted)",
-                      fontStyle: "italic",
-                    }}
-                  >
+                  <p style={{ fontSize: "13px", color: "var(--color-text-muted)", fontStyle: "italic" }}>
                     No skill assessments recorded.
                   </p>
                 ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "var(--space-2)",
-                    }}
-                  >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
                     {empSkillsRes.results
                       .filter((es) => es.employee === viewingEmp.id && es.is_active)
                       .map((es) => {
                         const skill = allSkills.find((s) => s.id === es.skill);
-                        const level = allLevels.find(
-                          (l) => l.id === es.current_level,
-                        );
+                        const level = allLevels.find((l) => l.id === es.current_level);
                         if (!skill) return null;
                         return (
                           <div
@@ -1275,8 +1251,8 @@ const EmployeePage: React.FC = () => {
                             }}
                           >
                             <span style={{ fontSize: "13px", fontWeight: 500 }}>{skill.skill_name}</span>
-                            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", }}>
-                              <span style={{ fontSize: "11px", color: "var(--color-text-muted)", textTransform: "uppercase", }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+                              <span style={{ fontSize: "11px", color: "var(--color-text-muted)", textTransform: "uppercase" }}>
                                 {(es as any).status === "VERIFIED" ? "✓ Verified" : "Pending"}
                               </span>
                               <ProficiencyBadge
@@ -1290,7 +1266,9 @@ const EmployeePage: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
+
+            </div>{/* end RIGHT COLUMN */}
+
           </div>
         )}
       </Drawer>

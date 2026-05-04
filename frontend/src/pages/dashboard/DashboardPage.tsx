@@ -1,21 +1,10 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { useAuthStore } from '@/stores/authStore';
 import { useUIStore, type DashboardView } from '@/stores/uiStore';
+import { useAllowedViews } from '@/hooks/useAllowedViews';
 
 const EmployeeDashboard = lazy(() => import('./EmployeeDashboard'));
 const ManagerDashboard = lazy(() => import('./ManagerDashboard'));
 const AdminDashboard = lazy(() => import('./AdminDashboard'));
-
-const ADMIN_ROLES = ['LMS_ADMIN'];
-const HR_ROLES = ['HR'];
-
-/** Returns the set of dashboard views this user is allowed to see */
-export const getAllowedViews = (roleCodes: string[]): DashboardView[] => {
-  const views: DashboardView[] = ['employee'];
-  if (roleCodes.some((c) => HR_ROLES.includes(c))) views.push('manager');
-  if (roleCodes.some((c) => ADMIN_ROLES.includes(c))) views.push('admin');
-  return views;
-};
 
 const DashboardLoader = () => (
   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
@@ -33,20 +22,18 @@ const DashboardLoader = () => (
 );
 
 const DashboardPage: React.FC = () => {
-  const { user } = useAuthStore();
   const { activeDashboardView, setDashboardView } = useUIStore();
 
-  const roleCodes = user?.roles?.map((r) => r.role_code) ?? [];
-  const allowedViews = getAllowedViews(roleCodes);
+  const allowedViews = useAllowedViews();
 
-  // If the persisted view is no longer allowed (e.g. role changed), fall back to employee
+  // If the persisted view is no longer allowed (e.g. permissions changed), fall back to employee
   useEffect(() => {
     if (!allowedViews.includes(activeDashboardView)) {
       setDashboardView('employee');
     }
   }, [activeDashboardView, allowedViews, setDashboardView]);
 
-  const view = allowedViews.includes(activeDashboardView) ? activeDashboardView : 'employee';
+  const view: DashboardView = allowedViews.includes(activeDashboardView) ? activeDashboardView : 'employee';
 
   return (
     <Suspense fallback={<DashboardLoader />}>

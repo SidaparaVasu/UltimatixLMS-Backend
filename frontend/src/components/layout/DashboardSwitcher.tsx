@@ -2,8 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Repeat, ChevronDown, LayoutDashboard, ShieldCheck, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore, type DashboardView } from '@/stores/uiStore';
-import { useAuthStore } from '@/stores/authStore';
-import { getAllowedViews } from '@/pages/dashboard/DashboardPage';
+import { useAllowedViews } from '@/hooks/useAllowedViews';
 
 const VIEW_META: Record<DashboardView, { label: string; icon: React.ReactNode }> = {
   employee: { label: 'My Dashboard',    icon: <LayoutDashboard size={15} strokeWidth={1.75} /> },
@@ -13,13 +12,11 @@ const VIEW_META: Record<DashboardView, { label: string; icon: React.ReactNode }>
 
 export const DashboardSwitcher: React.FC = () => {
   const { activeDashboardView, setDashboardView } = useUIStore();
-  const { user } = useAuthStore();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const roleCodes = user?.roles?.map((r) => r.role_code) ?? [];
-  const allowedViews = getAllowedViews(roleCodes);
+  const allowedViews = useAllowedViews();
 
   // Don't render at all if user only has one view
   if (allowedViews.length <= 1) return null;
